@@ -1,0 +1,83 @@
+[
+  {
+    "name": "DFIRM_ID",
+    "type": "STRING"
+  },
+  {
+    "name": "VERSION_ID",
+    "type": "STRING"
+  },
+  {
+    "name": "FLD_AR_ID",
+    "type": "STRING"
+  },
+  {
+    "name": "STUDY_TYP",
+    "type": "STRING"
+  },
+  {
+    "name": "FLD_ZONE",
+    "type": "STRING"
+  },
+  {
+    "name": "ZONE_SUBTY",
+    "type": "STRING"
+  },
+  {
+    "name": "SFHA_TF",
+    "type": "STRING"
+  },
+  {
+    "name": "STATIC_BFE",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "V_DATUM",
+    "type": "STRING"
+  },
+  {
+    "name": "DEPTH",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "LEN_UNIT",
+    "type": "STRING"
+  },
+  {
+    "name": "VELOCITY",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "VEL_UNIT",
+    "type": "STRING"
+  },
+  {
+    "name": "AR_REVERT",
+    "type": "STRING"
+  },
+  {
+    "name": "AR_SUBTRV",
+    "type": "STRING"
+  },
+  {
+    "name": "BFE_REVERT",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "DEP_REVERT",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "DUAL_ZONE",
+    "type": "STRING"
+  },
+  {
+    "name": "SOURCE_CIT",
+    "type": "STRING"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY",
+    "description": "Polygon reprojected from epsg:4269. source: ESRI Shapefile"
+  }
+]

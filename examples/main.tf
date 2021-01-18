@@ -29,6 +29,14 @@ module "bigquery" {
       clustering = ["geom", "elev"]
       expiration_time = null
       labels = null
+    },
+    {
+      table_id = "FLD_HAZ_AR"
+      schema = "./FLD_HAZ_AR_schema.json"
+      time_partitioning = null
+      clustering = ["FLD_ZONE", "ZONE_SUBTY"]
+      expiration_time = null
+      labels = null
     }
   ]
 }

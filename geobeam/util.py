@@ -41,7 +41,7 @@ def get_bigquery_schema(filepath, layer_name=None):
     from fiona import prop_type
 
     bq_schema = []
-    profile = fiona.open(filepath).profile
+    profile = fiona.open(filepath, layer=layer_name).profile
 
     for field_name, field_type in profile['schema']['properties'].items():
         fiona_type = prop_type(field_type)

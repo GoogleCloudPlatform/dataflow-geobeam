@@ -46,6 +46,8 @@ class GeotiffSource(filebasedsource.FileBasedSource):
             data in the same projection. Note: you will need to manually
             reproject all geometries to EPSG:4326 in order to store it in
             BigQuery.
+        in_epsg (int, optional): override the source projection of your input
+            raster in case its missing or incorrect
 
     Returns:
         generator of (`value`, `geom`) tuples. The data type of `value` is
@@ -53,6 +55,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
     Example:
         p | beam.io.Read(GeotiffSource(file_pattern))
+          | beam.Map(print)
     """
 
     def read_records(self, file_name, range_tracker):
@@ -74,7 +77,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
         with self.open_file(file_name) as f, MemoryFile(f.read()) as m:
             with m.open() as src:
-                src_dtype = src.profile['dtype']
+                #src_dtype = src.profile['dtype']
                 src_crs = _GeoSourceUtils.validate_crs(src.crs.to_dict(), self.in_epsg)
                 nodata_val = src.nodata
 
@@ -88,11 +91,11 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                     'file_name': file_name,
                     'file_size_mb': total_bytes / 1048576,
                     'src_profile': src.profile,
-                    'block_windows': num_windows,
-                    'window_bytes': window_bytes
+                    'block_windows': num_windows
                 }, default=str))
 
                 while range_tracker.try_claim(next_pos):
+                    #_GeoSourceUtils.get_record_index_from_range(range_tracker,
                     i = math.ceil(next_pos / window_bytes)
                     if i >= num_windows:
                         break
@@ -100,7 +103,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                     cur_window = block_windows[i]
                     cur_transform = src.window_transform(cur_window)
                     block = src.read(self.band_number, window=cur_window)
-                    block32 = block.astype(dtype(src_dtype))
+                    #block32 = block.astype(dtype(src_dtype))
 
                     logging.info(json.dumps({
                         'msg': 'read_records.try_claim',
@@ -111,7 +114,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                         'window': cur_window
                     }, default=str))
 
-                    for (g, v) in shapes(block32, transform=cur_transform):
+                    for (g, v) in shapes(block, transform=cur_transform):
                         if self.skip_nodata and v == nodata_val:
                             continue
 
@@ -147,6 +150,8 @@ class ShapefileSource(filebasedsource.FileBasedSource):
             Required the zipfile contains multiple layers.
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
+        in_epsg (int, optional): override the source projection of your input
+            shapefile in case of a missing or incorrect .prj file
 
     Returns:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
@@ -154,16 +159,55 @@ class ShapefileSource(filebasedsource.FileBasedSource):
 
     Example:
         p | beam.io.Read(ShapefileSource(file_pattern))
+          | beam.Map(print)
     """
 
     def read_records(self, file_name, range_tracker):
-        pass
+        from fiona import BytesCollection
+        from fiona import transform
+
+        total_bytes = self.estimate_size()
+        next_pos = range_tracker.start_position()
+
+        def split_points_unclaimed(stop_pos):
+            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+
+        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+
+        with self.open_file(file_name) as f:
+            if self.layer_name:
+                collection = BytesCollection(f.read(), layer=self.layer_name)
+            else:
+                collection = BytesCollection(f.read())
+
+            src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+
+            num_features = len(collection)
+            feature_bytes = math.floor(total_bytes / num_features)
+            i = 0
+
+            while range_tracker.try_claim(next_pos):
+                i = math.ceil(next_pos / feature_bytes)
+                if i >= num_features:
+                    break
+
+                cur_feature = collection[i]
+                geom = cur_feature['geometry']
+                props = cur_feature['properties']
+
+                if not self.skip_reproject:
+                    geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
+
+                yield (props, geom)
+
+                next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, layer_name=None, skip_reproject=False,
-                 **kwargs):
+                 in_epsg=None, **kwargs):
 
         self.layer_name = layer_name
         self.skip_reproject = skip_reproject
+        self.in_epsg = in_epsg
 
         super(ShapefileSource, self).__init__(file_pattern)
 
@@ -175,10 +219,14 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
     directory.
 
     Args:
+        gdb_name (str): Required. the name of the .gdb directory in the archive,
+            e.g. `FRD_510104_Coastal_GeoDatabase_20160708.gdb`
         layer_name (str): Required. the name of the layer you want to read from
-            the gdb.
+            the gdb, e.g. `S_CSLF_Ar`
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
+        in_epsg (int, optional): override the source projection of your input
+            shapefile in case of a missing or incorrect CRS
 
     Returns:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
@@ -186,16 +234,50 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
     Example:
         p | beam.io.Read(GeodatabaseSource(file_pattern))
+          | beam.Map(print)
     """
 
     def read_records(self, file_name, range_tracker):
-        pass
+        from fiona import transform
+        from fiona.io import MemoryZipFile
 
-    def __init__(self, file_pattern, layer_name=None, skip_reproject=False,
-                 **kwargs):
+        total_bytes = self.estimate_size()
+        next_pos = range_tracker.start_position()
 
+        def split_points_unclaimed(stop_pos):
+            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+
+        with self.open_file(file_name) as f, MemoryZipFile(f.read()) as mem:
+            collection = mem.open(self.gdb_name)
+            src_crs = _GeoSourceUtils.validate_crs(collection.crs.to_dict(), self.in_epsg)
+
+            num_features = len(collection)
+            feature_bytes = math.floor(total_bytes / num_features)
+            i = 0
+
+            while range_tracker.try_claim(next_pos):
+                i = math.ceil(next_pos / feature_bytes)
+                if i >= num_features:
+                    break
+
+                cur_feature = collection[i]
+                geom = cur_feature['geometry']
+                props = cur_feature['properties']
+
+                if not self.skip_reproject:
+                    geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
+
+                yield (props, geom)
+
+                next_pos = next_pos + feature_bytes
+
+    def __init__(self, file_pattern, gdb_name=None, layer_name=None,
+            in_epsg=None, skip_reproject=False, **kwargs):
+
+        self.gdb_name = gdb_name
         self.layer_name = layer_name
         self.skip_reproject = skip_reproject
+        self.in_epsg = in_epsg
 
         super(GeodatabaseSource, self).__init__(file_pattern)
 
@@ -221,3 +303,6 @@ class _GeoSourceUtils():
                 raise Exception()
 
         return src_crs
+
+    #@staticmethod
+    #def get_record_index_from_range(range_tracker, num_records):
