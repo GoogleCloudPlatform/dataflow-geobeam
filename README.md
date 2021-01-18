@@ -12,12 +12,12 @@ understand vector layer definitions and auto-generate Bigquery schemas.
 
 ### Supported input types
 
-| **File format** | **Data type** | **Geobeam class**   | **Layer handling**
-|:----------------|:--------------|:--------------------|--------------------|
+| **File format** | **Data type** | **Geobeam class**  | **Layer handling**
+|:----------------|:--------------|:-------------------|--------------------|
 | `tiff`         | raster        | `GeotiffSource`     | single-band
 | `shp`          | vector        | `ShapefileSource`   | multi-layer
 | `gdb`          | vector        | `GeodatabaseSource` | multi-layer
-| `json`         | vector (GeoJSON))  | `GeoJsonSource`      | single-layer
+| `json`         | vector (GeoJSON) | `GeoJsonSource`  | single-layer
 
 ### Included libraries
 
@@ -33,7 +33,7 @@ understand vector layer definitions and auto-generate Bigquery schemas.
 
 ### Dataflow templates
 
-| **Template**              | **Description** | **
+| **Template**              | **Description** |
 |:--------------------------|:----------------|
 | GeoTiff -> Bigquery       | polygonize a Geotiff raster and load into Bigquery
 | Shapefile -> Bigquery     | load a shapefile layer into Bigquery
@@ -49,7 +49,7 @@ There are two ways to use this module.
 ### Dataflow template
 Use this approach if you're looking for the easiest way to load your spatial data directly into BigQuery. 
 
-![](https://storage.googleapis.com/geobeam/examples/geobeam-dataflow-job-example.png)
+<img src="https://storage.googleapis.com/geobeam/examples/geobeam-dataflow-job-example.png" width="75%" height="75%">
 
 
 ### Python module
@@ -144,7 +144,7 @@ python examples/geotiff_dem.py --gcs_url gs://geobeam/examples/ghent-dem-1m.tif 
 
 Open up Bigquery GeoViz to visualize your data.
 
-![](https://storage.googleapis.com/geobeam/examples/geobeam-nfhl-geoviz-example.png)
+<img src="https://storage.googleapis.com/geobeam/examples/geobeam-nfhl-geoviz-example.png">
 
 
 ## License
