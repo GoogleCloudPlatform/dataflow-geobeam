@@ -1,3 +1,6 @@
 *~
 __pycach*
 .terra*
+dist/
+*.egg*
+terraform.*
