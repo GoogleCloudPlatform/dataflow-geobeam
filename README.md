@@ -49,7 +49,7 @@ There are two ways to use this module.
 ### Dataflow template
 Use this approach if you're looking for the easiest way to load your spatial data directly into BigQuery. 
 
-![](https://storage.googleapis.com/geobeam/examples/geobeam-dataflow-job-example.png){ width=75% }
+![](https://storage.googleapis.com/geobeam/examples/geobeam-dataflow-job-example.png)
 
 
 ### Python module
