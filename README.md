@@ -123,6 +123,30 @@ def run(options):
 
 See `examples/` for complete examples.
 
+## Examples
+
+A number of example pipelines are available in the `examples/` folder.
+To run them in your Google Cloud project, run the included [terraform](9) file to set up the Bigquery dataset and tables.
+
+```
+terraform init
+terraform apply -var project_id=<your project id>
+```
+
+### Run locally or in [Cloud Shell](8)
+```bash
+# load the flood hazard layer from a shapefile
+python examples/shapefile_nfhl.py --gcs_url gs://geobeam/examples/510104_20170217.zip --dataset geobeam --table FLD_HAZ_AR --layer_name S_FLD_HAZ_AR
+
+# load a DEM (elevation) raster
+python examples/geotiff_dem.py --gcs_url gs://geobeam/examples/ghent-dem-1m.tif --dataset geobeam --table dem --band_column elev --centroid_only=true
+```
+
+Open up Bigquery GeoViz to visualize your data.
+
+![](https://storage.googleapis.com/geobeam/examples/geobeam-nfhl-geoviz-example.png)
+
+
 ## License
 
 This is not an officially supported Google product, though support will be provided on a best-effort basis.
@@ -151,4 +175,5 @@ limitations under the License.
 [5]: https://pypi.org/project/Shapely/
 [6]: https://pypi.org/project/pyproj/ 
 [7]: https://cloud.google.com/dataflow
-
+[8]: https://cloud.google.com/shell
+[9]: https://www.terraform.io/
