@@ -1,0 +1,27 @@
+[
+  {
+    "name": "OBJECTID",
+    "type": "INT64"
+  },
+  {
+    "name": "TAX_ACCT",
+    "type": "STRING"
+  },
+  {
+    "name": "GPIN",
+    "type": "STRING"
+  },
+  {
+    "name": "LRSN",
+    "type": "STRING"
+  },
+  {
+    "name": "geom_bbox",
+    "type": "GEOGRAPHY"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY",
+    "description": "Polygon reprojected from epsg:2284. source: ESRI Shapefile"
+  }
+]

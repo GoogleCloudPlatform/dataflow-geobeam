@@ -1,0 +1,10 @@
+[
+  {
+    "name": "elev",
+    "type": "INT64"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY"
+  }
+]

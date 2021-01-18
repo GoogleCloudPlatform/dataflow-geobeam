@@ -1,0 +1,50 @@
+{
+    "description": "Load a single-band GeoTiff raster into bigquery",
+    "name": "Geotiff to Bigquery",
+    "parameters": [
+        {
+            "helpText": "Google Cloud Storage URL of GeoTIFF raster, e.g. gs://<bucket>/<path>",
+            "label": "gcs_url",
+            "name": "gcs_url"
+        },
+        {
+            "helpText": "Bigquery Dataset that contains your destination table",
+            "label": "dataset",
+            "name": "dataset"
+        },
+        {
+            "helpText": "Name of your destination table",
+            "label": "table",
+            "name": "table"
+        },
+        {
+            "helpText": "The name of the column that will store your raster band data values",
+            "label": "band column",
+            "name": "band_column"
+        },
+        {
+            "helpText": "The number of the band to read from the raster",
+            "label": "band number ",
+            "name": "band_number",
+            "isOptional": true
+        },
+        {
+            "helpText": "True to skip/ignore NODATA values from raster",
+            "label": "skip nodata ",
+            "name": "skip_nodata",
+            "isOptional": true
+        },
+        {
+            "helpText": "True to store only the centroid rather than the entire polygon",
+            "label": "centroid only",
+            "name": "centroid_only",
+            "isOptional": true
+        },
+        {
+            "helpText": "The EPSG code for the input coordinate reference system",
+            "label": "in_epsg",
+            "name": "in_epsg",
+            "isOptional": true
+        }
+    ]
+}
