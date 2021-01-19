@@ -63,7 +63,6 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         from rasterio.features import shapes
         from shapely.geometry import shape
         from fiona import transform
-        from numpy import dtype
         import json
 
         total_bytes = self.estimate_size()
@@ -77,7 +76,6 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
         with self.open_file(file_name) as f, MemoryFile(f.read()) as m:
             with m.open() as src:
-                #src_dtype = src.profile['dtype']
                 src_crs = _GeoSourceUtils.validate_crs(src.crs.to_dict(), self.in_epsg)
                 nodata_val = src.nodata
 
@@ -95,7 +93,6 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                 }, default=str))
 
                 while range_tracker.try_claim(next_pos):
-                    #_GeoSourceUtils.get_record_index_from_range(range_tracker,
                     i = math.ceil(next_pos / window_bytes)
                     if i >= num_windows:
                         break
@@ -103,7 +100,6 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                     cur_window = block_windows[i]
                     cur_transform = src.window_transform(cur_window)
                     block = src.read(self.band_number, window=cur_window)
-                    #block32 = block.astype(dtype(src_dtype))
 
                     logging.info(json.dumps({
                         'msg': 'read_records.try_claim',
@@ -318,10 +314,7 @@ class _GeoSourceUtils():
             return in_crs
 
         if bool(src_crs) is False:
-                logging.error('--in_epsg must be specified because raster CRS is empty')
-                raise Exception()
+            logging.error('--in_epsg must be specified because raster CRS is empty')
+            raise Exception()
 
         return src_crs
-
-    #@staticmethod
-    #def get_record_index_from_range(range_tracker, num_records):
