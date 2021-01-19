@@ -165,6 +165,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
     def read_records(self, file_name, range_tracker):
         from fiona import BytesCollection
         from fiona import transform
+        import json
 
         total_bytes = self.estimate_size()
         next_pos = range_tracker.start_position()
@@ -185,6 +186,13 @@ class ShapefileSource(filebasedsource.FileBasedSource):
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
             i = 0
+
+            logging.info(json.dumps({
+                'file_name': file_name,
+                'profile': collection.profile,
+                'num_features': num_features,
+                'total_bytes': total_bytes
+            }))
 
             while range_tracker.try_claim(next_pos):
                 i = math.ceil(next_pos / feature_bytes)
@@ -239,7 +247,8 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
     def read_records(self, file_name, range_tracker):
         from fiona import transform
-        from fiona.io import MemoryZipFile
+        from fiona.io import ZipMemoryFile
+        import json
 
         total_bytes = self.estimate_size()
         next_pos = range_tracker.start_position()
@@ -247,20 +256,30 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         def split_points_unclaimed(stop_pos):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
-        with self.open_file(file_name) as f, MemoryZipFile(f.read()) as mem:
-            collection = mem.open(self.gdb_name)
-            src_crs = _GeoSourceUtils.validate_crs(collection.crs.to_dict(), self.in_epsg)
+        with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
+            collection = mem.open(self.gdb_name, layer=self.layer_name)
+            src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
             i = 0
+
+            # XXX workaround due to https://github.com/Toblerity/Fiona/issues/996
+            features = list(collection)
+
+            logging.info(json.dumps({
+                'file_name': file_name,
+                'profile': collection.profile,
+                'num_features': num_features,
+                'total_bytes': total_bytes
+            }))
 
             while range_tracker.try_claim(next_pos):
                 i = math.ceil(next_pos / feature_bytes)
                 if i >= num_features:
                     break
 
-                cur_feature = collection[i]
+                cur_feature = features[i]
                 geom = cur_feature['geometry']
                 props = cur_feature['properties']
 

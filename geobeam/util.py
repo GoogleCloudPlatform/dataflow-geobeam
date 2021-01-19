@@ -26,7 +26,7 @@ BQ_FIELD_TYPES = {
 }
 
 
-def get_bigquery_schema(filepath, layer_name=None):
+def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
     """Generate a Bigquery table schema from a geospatial file
 
     Args:
@@ -38,10 +38,19 @@ def get_bigquery_schema(filepath, layer_name=None):
     """
 
     import fiona
+    from fiona.io import ZipMemoryFile
     from fiona import prop_type
 
     bq_schema = []
-    profile = fiona.open(filepath, layer=layer_name).profile
+
+    if layer_name is None:
+        profile = fiona.open(filepath).profile
+    elif gdb_name is None:
+        profile = fiona.open(filepath, layer=layer_name).profile
+    else:
+        f = open(filepath, 'rb')
+        mem = ZipMemoryFile(f.read())
+        profile = mem.open(gdb_name, layer=layer_name).profile
 
     for field_name, field_type in profile['schema']['properties'].items():
         fiona_type = prop_type(field_type)
@@ -68,7 +77,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', type=str)
     parser.add_argument('--layer_name', type=str, default=None)
+    parser.add_argument('--gdb_name', type=str, default=None)
     args, _ = parser.parse_known_args()
 
-    schema = get_bigquery_schema(args.file, args.layer_name)
+    schema = get_bigquery_schema(args.file, args.layer_name, args.gdb_name)
     print(json.dumps(schema, indent=2))

@@ -78,7 +78,29 @@ setup(
   })
 ```
 
-3. Use `geobeam` in your custom pipeline! See examples below.
+3. Use the [Dockerfile](Dockerfile) to build a flex-template container by setting `py_file` to your Beam pipeline file:
+
+```bash
+# build locally with docker
+docker build -t gcr.io/<project_id>/geodatabase-example --build-arg py_file=examples/geodatabase_frd.py
+docker push gcr.io/<project_id>/geodatabase-example
+
+# build flex template
+gcloud dataflow flex-template build gs://geobeam/templates/geodatabase-example.json \
+  --image gcr.io/<project_id>/geodatabase-example \
+  --metadata-file templates/geodatabase_bigquery_metadata.json \
+  --sdk-language PYTHON
+
+# run flex template Dataflow job
+gcloud dataflow flex-template run "geodatabase-bigquery-1" \
+  --template-file-gcs-location gs://geobeam/templates/geodatabase-example.json \
+  --service-account-email=<your_service_account>
+  --parameters gcs_url=gs://geobeam/examples/FRD_510104_Coastal_GeoDatabase_20160708.zip \
+  --parameters dataset=geobeam \
+  --parameters table=CSLF_Ar \
+  --parameters layer_name=S_CSLF_Ar \
+  --parameters gdb_name=FRD_510104_Coastal_GeoDatabase_20160708.gdb
+```
 
 #### Examples
 
@@ -136,10 +158,27 @@ terraform apply -var project_id=<your project id>
 ### Run locally or in [Cloud Shell](8)
 ```bash
 # load the flood hazard layer from a shapefile
-python examples/shapefile_nfhl.py --gcs_url gs://geobeam/examples/510104_20170217.zip --dataset geobeam --table FLD_HAZ_AR --layer_name S_FLD_HAZ_AR
+python examples/shapefile_nfhl.py \
+  --gcs_url gs://geobeam/examples/510104_20170217.zip \
+  --dataset geobeam \
+  --table FLD_HAZ_AR \
+  --layer_name S_FLD_HAZ_AR
 
 # load a DEM (elevation) raster
-python examples/geotiff_dem.py --gcs_url gs://geobeam/examples/ghent-dem-1m.tif --dataset geobeam --table dem --band_column elev --centroid_only=true
+python examples/geotiff_dem.py \
+  --gcs_url gs://geobeam/examples/ghent-dem-1m.tif \
+  --dataset geobeam \
+  --table dem \
+  --band_column elev \
+  --centroid_only=true
+
+# load flood zone changes from geodatabase to Bigquery
+python examples/geodatabase_frd.py \
+  --gcs_url gs://geobeam/examples/FRD_510104_Coastal_GeoDatabase_20160708.zip \
+  --dataset geobeam \
+  --table CSLF_Ar \
+  --layer_name S_CSLF_Ar \
+  --gdb_name FRD_510104_Coastal_GeoDatabase_20160708.gdb
 ```
 
 Open up Bigquery GeoViz to visualize your data.

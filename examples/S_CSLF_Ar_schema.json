@@ -1,0 +1,159 @@
+[
+  {
+    "name": "CSLF_ID",
+    "type": "STRING"
+  },
+  {
+    "name": "CNMS_ID",
+    "type": "STRING"
+  },
+  {
+    "name": "AREA_SF",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "PRE_ZONE",
+    "type": "STRING"
+  },
+  {
+    "name": "PRE_ZONEST",
+    "type": "STRING"
+  },
+  {
+    "name": "PRE_MODEL",
+    "type": "STRING"
+  },
+  {
+    "name": "PRE_TOPO",
+    "type": "STRING"
+  },
+  {
+    "name": "PRE_SRCCIT",
+    "type": "STRING"
+  },
+  {
+    "name": "NEW_ZONE",
+    "type": "STRING"
+  },
+  {
+    "name": "NEW_ZONEST",
+    "type": "STRING"
+  },
+  {
+    "name": "NEW_MODEL",
+    "type": "STRING"
+  },
+  {
+    "name": "NEW_TOPO",
+    "type": "STRING"
+  },
+  {
+    "name": "NEW_SRCCIT",
+    "type": "STRING"
+  },
+  {
+    "name": "PEAKDSCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "MDLMETHODS",
+    "type": "STRING"
+  },
+  {
+    "name": "FLD_CTRLCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "HYDSTRCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "TOPOCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "SEDCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "EROSIONCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "CHANNELCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "LEVEECHG",
+    "type": "STRING"
+  },
+  {
+    "name": "RUNOFFCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "DUNECHG",
+    "type": "STRING"
+  },
+  {
+    "name": "OTHCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "SFHACHG",
+    "type": "STRING"
+  },
+  {
+    "name": "FLDWYCHG",
+    "type": "STRING"
+  },
+  {
+    "name": "NONSFHACHG",
+    "type": "STRING"
+  },
+  {
+    "name": "CHHACHG",
+    "type": "STRING"
+  },
+  {
+    "name": "STRUCTURES",
+    "type": "INT64"
+  },
+  {
+    "name": "POPULATION",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "CID",
+    "type": "STRING"
+  },
+  {
+    "name": "HUC8_CODE",
+    "type": "STRING"
+  },
+  {
+    "name": "CASE_NO",
+    "type": "STRING"
+  },
+  {
+    "name": "VERSION_ID",
+    "type": "STRING"
+  },
+  {
+    "name": "SOURCE_CIT",
+    "type": "STRING"
+  },
+  {
+    "name": "Shape_Length",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "Shape_Area",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY",
+    "description": "MultiPolygon reprojected from epsg:4759. source: OpenFileGDB"
+  }
+]

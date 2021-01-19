@@ -37,6 +37,14 @@ module "bigquery" {
       clustering = ["FLD_ZONE", "ZONE_SUBTY"]
       expiration_time = null
       labels = null
+    },
+    {
+      table_id = "CSLF_Ar"
+      schema = "./S_CSLF_Ar_schema.json"
+      time_partitioning = null
+      clustering = ["PRE_ZONE", "PRE_ZONEST", "NEW_ZONE", "NEW_ZONEST"]
+      expiration_time = null
+      labels = null
     }
   ]
 }

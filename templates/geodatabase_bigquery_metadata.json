@@ -1,0 +1,38 @@
+{
+    "description": "Load a geodatabase layer into Bigquery",
+    "name": "Geodatabase to Bigquery",
+    "parameters": [
+        {
+            "helpText": "Google Cloud Storage URL of GeoTIFF raster, e.g. gs://<bucket>/<path>",
+            "label": "gcs_url",
+            "name": "gcs_url"
+        },
+        {
+            "helpText": "Bigquery Dataset that contains your destination table",
+            "label": "dataset",
+            "name": "dataset"
+        },
+        {
+            "helpText": "Name of your destination table",
+            "label": "table",
+            "name": "table"
+        },
+        {
+            "helpText": "name of geodatabase dir inside zip archive",
+            "label": "gdb name",
+            "name": "gdb_name"
+        },
+        {
+            "helpText": "Name of the layer to read from the geodatabase",
+            "label": "layer_name",
+            "name": "layer_name"
+        },
+        {
+          "helpText": "manually override the source projection with an EPSG code",
+          "label": "epsg",
+          "name": "in_epsg",
+          "isOptional": true
+        }
+    ]
+}
+
