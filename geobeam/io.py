@@ -61,9 +61,12 @@ class GeotiffSource(filebasedsource.FileBasedSource):
     def read_records(self, file_name, range_tracker):
         from rasterio.io import MemoryFile
         from rasterio.features import shapes
-        from shapely.geometry import shape
+        from rasterio.warp import calculate_default_transform
+        from rasterio.windows import bounds
+        from shapely.geometry import Point
         from fiona import transform
         import json
+        import numpy
 
         total_bytes = self.estimate_size()
 
@@ -99,7 +102,10 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
                     cur_window = block_windows[i]
                     cur_transform = src.window_transform(cur_window)
+                    win_bounds = bounds(cur_window, cur_transform)
                     block = src.read(self.band_number, window=cur_window)
+                    wgs84, w, h = calculate_default_transform(src_crs, 'epsg:4326',
+                            cur_window.width, cur_window.height, *win_bounds)
 
                     logging.info(json.dumps({
                         'msg': 'read_records.try_claim',
@@ -110,17 +116,21 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                         'window': cur_window
                     }, default=str))
 
-                    for (g, v) in shapes(block, transform=cur_transform):
-                        if self.skip_nodata and v == nodata_val:
-                            continue
+                    if self.centroid_only:
+                        for j, i in numpy.ndindex(block.shape):
+                            x, y = (i, j) * wgs84
 
-                        if self.centroid_only:
-                            g = shape(g).centroid.__geo_interface__
+                            yield (block[j][i], Point(x, y).__geo_interface__)
 
-                        if not self.skip_reproject:
-                            g = transform.transform_geom(src_crs, 'epsg:4326', g)
+                    else:
+                        for (g, v) in shapes(block, transform=cur_transform):
+                            if self.skip_nodata and v == nodata_val:
+                                continue
 
-                        yield (v, g)
+                            if not self.skip_reproject:
+                                g = transform.transform_geom(src_crs, 'epsg:4326', g)
+
+                            yield (v, g)
 
                     next_pos = next_pos + window_bytes
 
