@@ -19,12 +19,14 @@ from __future__ import absolute_import
 import setuptools
 from distutils.command.build import build as _build
 from distutils.core import setup
-from geobeam.setup import GeobeamCommands
 
 
 REQUIRED_PACKAGES = [
-    'apache_beam',
-    'psutil'
+    'apache_beam>=2.25.0',
+    'pyproj==3.0.0.post1',
+    'fiona==1.8.18',
+    'shapely==1.7.1',
+    'rasterio==1.1.8'
 ]
 
 
@@ -54,9 +56,9 @@ setup(
     ],
     install_requires=REQUIRED_PACKAGES,
     packages=setuptools.find_packages(),
-    cmdclass={
-        'build': build,
-        'GeobeamCommands': GeobeamCommands,
-    },
-    python_requires='>=3.7'
+    #cmdclass={
+        #'build': build,
+        #'GeobeamCommands': GeobeamCommands,
+    #},
+    python_requires='>=3.8'
 )

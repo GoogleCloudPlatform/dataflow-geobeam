@@ -26,36 +26,30 @@ from apache_beam.options.pipeline_options import PipelineOptions
 def format_record(element, band_column):
     value, geom = element
 
-    # convert to integer centimeters so that this column can be clustered
     return {
-        band_column: int(value * 100),
+        band_column: int(value),
         'geom': json.dumps(geom)
     }
-
-
-def filter_nodata(element):
-    v, g, nodata = element
-    return nodata is not True
 
 
 def run(pipeline_args, known_args):
     from geobeam.io import GeotiffSource
 
-    pipeline_options = PipelineOptions(pipeline_args)
+    pipeline_options = PipelineOptions([
+        '--experiments', 'use_beam_bq_sink'
+    ] + pipeline_args)
 
     with beam.Pipeline(options=pipeline_options) as p:
         (p
          | beam.io.Read(GeotiffSource(known_args.gcs_url,
              band_number=known_args.band_number,
-             skip_nodata=known_args.skip_nodata,
-             centroid_only=known_args.centroid_only,
-             in_epsg=known_args.in_epsg))
+             skip_nodata=True))
          | 'FormatRecords' >> beam.Map(format_record, known_args.band_column)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
-             method='STREAMING_INSERTS',
+             method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
 
@@ -68,9 +62,6 @@ if __name__ == '__main__':
     parser.add_argument('--table')
     parser.add_argument('--band_column')
     parser.add_argument('--band_number', type=int, default=1)
-    parser.add_argument('--skip_nodata', type=bool, default=True)
-    parser.add_argument('--centroid_only', type=bool, default=False)
-    parser.add_argument('--in_epsg', type=int, default=None)
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)

@@ -23,32 +23,19 @@ from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
-def format_record(element):
-    from osgeo import ogr
-
-    props, geom = element
-
-    ogr_geom = ogr.CreateGeometryFromJson(json.dumps(geom))
-    ogr_geom = ogr_geom.MakeValid()
-
-    if ogr_geom is None:
-        return None
+def format_record(element, band_column):
+    value, geom = element
 
     return {
-        **props,
-        'geom': ogr_geom.ExportToJson()
+        band_column: value,
+        'geom': json.dumps(geom)
     }
 
 
-def filter_invalid(element):
-    return element is not None
-
-
 def run(pipeline_args, known_args):
-    from geobeam.io import GeodatabaseSource
+    from geobeam.io import GeotiffSource
 
     pipeline_options = PipelineOptions([
-        '--experiments', 'use_beam_bq_sink',
         '--setup_file',  '/dataflow/template/setup.py'
     ] + pipeline_args)
 
@@ -56,20 +43,19 @@ def run(pipeline_args, known_args):
 
     with beam.Pipeline(options=pipeline_options) as p:
         (p
-         | beam.io.Read(GeodatabaseSource(known_args.gcs_url,
-             layer_name=known_args.layer_name,
-             gdb_name=known_args.gdb_name))
-         | 'FormatRecords' >> beam.Map(format_record)
-         | 'FilterInvalid' >> beam.Filter(filter_invalid)
+         | beam.io.Read(GeotiffSource(known_args.gcs_url,
+             band_number=known_args.band_number,
+             skip_nodata=known_args.skip_nodata,
+             centroid_only=known_args.centroid_only,
+             in_epsg=known_args.in_epsg))
+         | 'FormatRecords' >> beam.Map(format_record, known_args.band_column)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
-             method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
-             custom_gcs_temp_location=known_args.custom_gcs_temp_location,
+             method='STREAMING_INSERTS',
              write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
-             create_disposition=beam.io.BigQueryDisposition.CREATE_NEVER))
-
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
 
 if __name__ == '__main__':
     import sys
@@ -83,10 +69,11 @@ if __name__ == '__main__':
     parser.add_argument('--gcs_url')
     parser.add_argument('--dataset')
     parser.add_argument('--table')
-    parser.add_argument('--layer_name')
-    parser.add_argument('--gdb_name')
+    parser.add_argument('--band_column')
+    parser.add_argument('--band_number', type=int, default=1)
+    parser.add_argument('--skip_nodata', type=bool, default=True)
+    parser.add_argument('--centroid_only', type=bool, default=False)
     parser.add_argument('--in_epsg', type=int, default=None)
-    parser.add_argument('--custom_gcs_temp_location')
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)

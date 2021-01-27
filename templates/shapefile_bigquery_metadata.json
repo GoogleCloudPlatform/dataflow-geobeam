@@ -1,9 +1,9 @@
 {
-    "description": "Load a geodatabase layer into Bigquery",
-    "name": "Geodatabase to Bigquery",
+    "description": "Load a shapefile layer into Bigquery",
+    "name": "Shapefile to Bigquery",
     "parameters": [
         {
-            "helpText": "Google Cloud Storage URL of geodatabase zip file, e.g. gs://<bucket>/<path>.zip",
+            "helpText": "Google Cloud Storage URL of Shapefile zip, e.g. gs://<bucket>/<path>.zip",
             "label": "gcs_url",
             "name": "gcs_url"
         },
@@ -18,12 +18,7 @@
             "name": "table"
         },
         {
-            "helpText": "name of geodatabase dir inside zip archive, e.g. TIGER_CenBlk.gdb",
-            "label": "gdb name",
-            "name": "gdb_name"
-        },
-        {
-            "helpText": "Name of the layer to read from the geodatabase",
+            "helpText": "Name of the layer to read from the shapefile",
             "label": "layer_name",
             "name": "layer_name"
         },
@@ -35,4 +30,5 @@
         }
     ]
 }
+
 

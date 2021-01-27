@@ -12,12 +12,11 @@ understand vector layer definitions and auto-generate Bigquery schemas.
 
 ### Supported input types
 
-| **File format** | **Data type** | **Geobeam class**  | **Layer handling**
-|:----------------|:--------------|:-------------------|--------------------|
-| `tiff`         | raster        | `GeotiffSource`     | single-band
-| `shp`          | vector        | `ShapefileSource`   | multi-layer
-| `gdb`          | vector        | `GeodatabaseSource` | multi-layer
-| `json`         | vector (GeoJSON) | `GeoJsonSource`  | single-layer
+| **File format** | **Data type** | **Geobeam class**  |
+|:----------------|:--------------|:-------------------|
+| `tiff`         | raster        | `GeotiffSource`
+| `shp`          | vector        | `ShapefileSource`
+| `gdb`          | vector        | `GeodatabaseSource`
 
 ### Included libraries
 
@@ -42,17 +41,6 @@ understand vector layer definitions and auto-generate Bigquery schemas.
 
 ## How to Use
 
-There are two ways to use this module. 
-1. As a re-usable Dataflow Flex template
-2. As a standalone python module to build a custom pipeline
-
-### Dataflow template
-Use this approach if you're looking for the easiest way to load your spatial data directly into BigQuery. 
-
-![](https://storage.googleapis.com/geobeam/examples/geobeam-dataflow-job-example.png)
-
-
-### Python module
 Use the `geobeam` python module to build a custom pipeline.
 
 1. Install the module
@@ -60,47 +48,34 @@ Use the `geobeam` python module to build a custom pipeline.
 pip install geobeam
 ```
 
-2. Configure `setup.py` to install geobeam's worker dependencies
-```py
-from geobeam.setup import GeobeamCommand
-from distutils.command.build import build as _build
+2. Write a Dockerfile to build a [custom container](11) based on the [`geobeam-base`](build/Dockerfile) image:
 
-class build(_build):
-  sub_commands = _build.sub_commands + [('GeobeamCommand', None)]
-
-setup(
-  name='your-pipeline',
-  packages=setuptools.find_packages(),
-  install_requires=[],
-  cmdclass={
-    'build': build,
-    'GeobeamCommand': GeobeamCommand
-  })
+```dockerfile
+FROM gcr.io/cloud-solutions-images/geobeam-base:3.2.1
+COPY . .
 ```
-
-3. Use the [Dockerfile](Dockerfile) to build a flex-template container by setting `py_file` to your Beam pipeline file:
 
 ```bash
 # build locally with docker
-docker build -t gcr.io/<project_id>/geodatabase-example --build-arg py_file=examples/geodatabase_frd.py
-docker push gcr.io/<project_id>/geodatabase-example
-
-# build flex template
-gcloud dataflow flex-template build gs://geobeam/templates/geodatabase-example.json \
-  --image gcr.io/<project_id>/geodatabase-example \
-  --metadata-file templates/geodatabase_bigquery_metadata.json \
-  --sdk-language PYTHON
-
-# run flex template Dataflow job
-gcloud dataflow flex-template run "geodatabase-bigquery-1" \
-  --template-file-gcs-location gs://geobeam/templates/geodatabase-example.json \
-  --service-account-email=<your_service_account>
-  --parameters gcs_url=gs://geobeam/examples/FRD_510104_Coastal_GeoDatabase_20160708.zip \
-  --parameters dataset=geobeam \
-  --parameters table=CSLF_Ar \
-  --parameters layer_name=S_CSLF_Ar \
-  --parameters gdb_name=FRD_510104_Coastal_GeoDatabase_20160708.gdb
+docker build -t gcr.io/<project_id>/example
+docker push gcr.io/<project_id>/example
 ```
+
+3. Run in Dataflow
+
+```
+python -m examples.geotiff_dem
+  --runner DataflowRunner
+  --worker_harness_container_image=gcr.io/<project_id>/example
+  --experiment use_runner_v2
+  --temp_location gs://<bucket>
+  --gcs_url <input_file>
+  --dataset=geobeam
+  --table=dem
+  --band_column=elev
+  --centroid_only true
+```
+
 
 #### Examples
 
@@ -150,37 +125,6 @@ See `examples/` for complete examples.
 A number of example pipelines are available in the `examples/` folder.
 To run them in your Google Cloud project, run the included [terraform](9) file to set up the Bigquery dataset and tables.
 
-```
-terraform init
-terraform apply -var project_id=<your project id>
-```
-
-### Run locally or in [Cloud Shell](8)
-```bash
-# load the flood hazard layer from a shapefile
-python examples/shapefile_nfhl.py \
-  --gcs_url gs://geobeam/examples/510104_20170217.zip \
-  --dataset geobeam \
-  --table FLD_HAZ_AR \
-  --layer_name S_FLD_HAZ_AR
-
-# load a DEM (elevation) raster
-python examples/geotiff_dem.py \
-  --gcs_url gs://geobeam/examples/ghent-dem-1m.tif \
-  --dataset geobeam \
-  --table dem \
-  --band_column elev \
-  --centroid_only=true
-
-# load flood zone changes from geodatabase to Bigquery
-python examples/geodatabase_frd.py \
-  --gcs_url gs://geobeam/examples/FRD_510104_Coastal_GeoDatabase_20160708.zip \
-  --dataset geobeam \
-  --table CSLF_Ar \
-  --layer_name S_CSLF_Ar \
-  --gdb_name FRD_510104_Coastal_GeoDatabase_20160708.gdb
-```
-
 Open up Bigquery GeoViz to visualize your data.
 
 ![](https://storage.googleapis.com/geobeam/examples/geobeam-nfhl-geoviz-example.png)
@@ -207,7 +151,7 @@ limitations under the License.
 ```
 
 
-[1]: https://beam.apache.org/releases/pydoc/2.4.0/apache_beam.io.filebasedsource.html
+[1]: https://beam.apache.org/releases/pydoc/2.25.0/apache_beam.io.filebasedsource.html
 [2]: https://pypi.org/project/GDAL/
 [3]: https://pypi.org/project/rasterio/
 [4]: https://pypi.org/project/Fiona/
@@ -216,3 +160,4 @@ limitations under the License.
 [7]: https://cloud.google.com/dataflow
 [8]: https://cloud.google.com/shell
 [9]: https://www.terraform.io/
+[10]: https://cloud.google.com/dataflow/docs/guides/using-custom-containers

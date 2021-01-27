@@ -1,22 +1,13 @@
-FROM gcr.io/dataflow-templates-base/python3-template-launcher-base
+FROM gcr.io/dataflow-geobeam/base:3.2.1
 
-ARG WORKDIR=/dataflow/template
-ARG py_file
-RUN mkdir -p ${WORKDIR}
-WORKDIR ${WORKDIR}
-
-RUN apt-get update -y
-RUN apt-get install libffi-dev git -y
+COPY examples/requirements.txt ./requirements.txt
 RUN pip install --upgrade pip
-
-COPY examples/requirements.txt ${WORKDIR}/requirements.txt
-
-ENV FLEX_TEMPLATE_PYTHON_REQUIREMENTS_FILE="${WORKDIR}/requirements.txt"
-ENV FLEX_TEMPLATE_PYTHON_SETUP_FILE="${WORKDIR}/setup.py"
-ENV FLEX_TEMPLATE_PYTHON_PY_FILE="${WORKDIR}/main.py"
-
 RUN pip install -r requirements.txt
 
-COPY setup.py ${WORKDIR}/setup.py
-COPY $py_file ${WORKDIR}/main.py
+RUN mkdir -p examples geobeam dist
+
 COPY . .
+
+RUN python setup.py bdist_wheel
+
+RUN pip install dist/geobeam-0.0.1-py3-none-any.whl

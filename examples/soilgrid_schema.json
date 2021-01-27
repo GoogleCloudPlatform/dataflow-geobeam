@@ -1,0 +1,11 @@
+[
+  {
+    "name": "h3",
+    "type": "INT64",
+    "description": "Derived available soil water capacity (volumetric fraction) with FC = pF 2.5 for depth 0 cm"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY"
+  }
+]

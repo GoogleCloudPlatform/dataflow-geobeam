@@ -1,1 +1,4 @@
-apache-beam[gcp]
+pyproj==3.0.0.post1
+fiona==1.8.18
+shapely==1.7.1
+rasterio==1.1.8

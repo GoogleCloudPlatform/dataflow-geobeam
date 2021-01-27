@@ -31,10 +31,17 @@ def format_record(element):
     ogr_geom = ogr.CreateGeometryFromJson(json.dumps(geom))
     ogr_geom = ogr_geom.MakeValid()
 
+    if ogr_geom is None:
+        return None
+
     return {
         **props,
         'geom': ogr_geom.ExportToJson()
     }
+
+
+def filter_invalid(element):
+    return element is not None
 
 
 def run(pipeline_args, known_args):
@@ -42,8 +49,6 @@ def run(pipeline_args, known_args):
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink',
-        '--setup_file',  '/dataflow/template/setup.py',
-        '--project', 'geobeam-301922'
     ] + pipeline_args)
 
     pipeline_options.view_as(SetupOptions).save_main_session = True
@@ -53,22 +58,17 @@ def run(pipeline_args, known_args):
          | beam.io.Read(ShapefileSource(known_args.gcs_url,
              layer_name=known_args.layer_name))
          | 'FormatRecords' >> beam.Map(format_record)
-         #| beam.Map(print))
+         | 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
-             custom_gcs_temp_location='gs://geobeam-pipeline-tmp',
+             custom_gcs_temp_location=known_args.custom_gcs_temp_location,
              write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
              create_disposition=beam.io.BigQueryDisposition.CREATE_NEVER))
 
 if __name__ == '__main__':
-    import sys
-    from os import path
-    dir_path = path.dirname(path.realpath(__file__))
-    sys.path.insert(0, path.realpath(path.join(dir_path, '../')))
-
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser()
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser.add_argument('--table')
     parser.add_argument('--layer_name')
     parser.add_argument('--in_epsg', type=int, default=None)
+    parser.add_argument('--custom_gcs_temp_location')
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)
-

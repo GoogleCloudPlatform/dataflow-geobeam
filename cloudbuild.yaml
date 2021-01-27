@@ -11,3 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+steps:
+  # build base image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: base
+    args: ['build', '-f', 'build/Dockerfile', '-t', 'gcr.io/dataflow-geobeam/base:3.2.1', '.']
+
+  # build examples image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: example
+    args: ['build', '-t', 'gcr.io/dataflow-geobeam/example:3.2.1', '.']
+    waitFor: ['base']
+  
+
+images: [
+  'gcr.io/dataflow-geobeam/base',
+  'gcr.io/dataflow-geobeam/example'
+]

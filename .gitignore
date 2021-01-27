@@ -7,3 +7,4 @@ terraform.*
 build/lib
 build/bdist*
 *.tar.gz
+*key.*

@@ -1,5 +1,5 @@
 provider "google" {
-  project     = "geobeam-301922"
+  project     = "dataflow-geobeam"
   region      = "us-central1"
 }
 
@@ -8,8 +8,8 @@ module "bigquery" {
   version = "4.3.0"
   dataset_id = "geobeam"
   dataset_name = "geobeam"
-  description = "geobeam test"
-  project_id = "geobeam-301922"
+  description = "geobeam test dataset"
+  project_id = "dataflow-geobeam"
   location = "US"
   default_table_expiration_ms = null
   delete_contents_on_destroy = false
@@ -27,6 +27,14 @@ module "bigquery" {
       schema = "./dem_schema.json"
       time_partitioning = null
       clustering = ["geom", "elev"]
+      expiration_time = null
+      labels = null
+    },
+    {
+      table_id = "soilgrid"
+      schema = "./soilgrid_schema.json"
+      time_partitioning = null
+      clustering = ["geom", "h3"]
       expiration_time = null
       labels = null
     },
