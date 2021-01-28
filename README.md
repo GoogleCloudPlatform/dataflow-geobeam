@@ -4,9 +4,9 @@ geobeam adds GIS capabilities to your Apache Beam pipelines.
 
 ## What does geobeam do?
 
-`geobeam` enables you to ingest and analyze massive amounts of geospatial data in parallel using [Dataflow](7).
+`geobeam` enables you to ingest and analyze massive amounts of geospatial data in parallel using [Dataflow](https://cloud.google.com/dataflow).
 geobeam installs GDAL, PROJ4, and other related libraries onto your
-Dataflow worker machines, and provides a set of [FileBasedSource](1)
+Dataflow worker machines, and provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.25.0/apache_beam.io.filebasedsource.html)
 classes that make it easy to read, process, and write geospatial data. `geobeam` can also
 understand vector layer definitions and auto-generate Bigquery schemas.
 
@@ -24,11 +24,11 @@ understand vector layer definitions and auto-generate Bigquery schemas.
 
 | **Module**      | **Version** | **Description** |
 |:----------------|:------------|:----------------|
-| [gdal](2)       | 3.2.1       | python bindings for GDAL
-| [rasterio](3)   | 1.1.8       | reads and writes geospatial raster data
-| [fiona](4)      | 1.8.18      | reads and writes geospatial vector data
-| [shapely](5)    | 1.7.1       | manipulation and analysis of geometric objects in the cartesian plane
-| [pyproj](6)     | 3.0.0       | cartographic projections and coordinate transformations library
+| [gdal](https://pypi.org/project/GDAL/)          | 3.2.1       | python bindings for GDAL
+| [rasterio](https://pypi.org/project/rasterio/)  | 1.1.8       | reads and writes geospatial raster data
+| [fiona](https://pypi.org/project/Fiona/)        | 1.8.18      | reads and writes geospatial vector data
+| [shapely](https://pypi.org/project/Shapely/)    | 1.7.1       | manipulation and analysis of geometric objects in the cartesian plane
+| [pyproj](https://pypi.org/project/pyproj/)      | 3.0.0       | cartographic projections and coordinate transformations library
 
 ### Dataflow templates
 
@@ -48,10 +48,11 @@ Use the `geobeam` python module to build a custom pipeline.
 pip install geobeam
 ```
 
-2. Write a Dockerfile to build a [custom container](11) based on the [`geobeam-base`](build/Dockerfile) image:
+2. Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
+*Note:* make sure you use a version-tagged image, e.g. `3.2.1`. Do not use `latest`.
 
 ```dockerfile
-FROM gcr.io/cloud-solutions-images/geobeam-base:3.2.1
+FROM gcr.io/dataflow-geobeam/base:3.2.1
 COPY . .
 ```
 
@@ -64,7 +65,7 @@ docker push gcr.io/<project_id>/example
 3. Run in Dataflow
 
 ```
-python -m examples.geotiff_dem
+python -m geobeam.examples.geotiff_dem
   --runner DataflowRunner
   --worker_harness_container_image=gcr.io/<project_id>/example
   --experiment use_runner_v2
@@ -118,12 +119,12 @@ def run(options):
         | 'WriteToBigquery' >> beam.io.WriteToBigQuery('geo.parcel'))
 ```
 
-See `examples/` for complete examples.
+See `geobeam/examples/` for complete examples.
 
 ## Examples
 
-A number of example pipelines are available in the `examples/` folder.
-To run them in your Google Cloud project, run the included [terraform](9) file to set up the Bigquery dataset and tables.
+A number of example pipelines are available in the `geobeam/examples/` folder.
+To run them in your Google Cloud project, run the included [terraform](https://www.terraform.io/) file to set up the Bigquery dataset and tables.
 
 Open up Bigquery GeoViz to visualize your data.
 
@@ -149,15 +150,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-
-
-[1]: https://beam.apache.org/releases/pydoc/2.25.0/apache_beam.io.filebasedsource.html
-[2]: https://pypi.org/project/GDAL/
-[3]: https://pypi.org/project/rasterio/
-[4]: https://pypi.org/project/Fiona/
-[5]: https://pypi.org/project/Shapely/
-[6]: https://pypi.org/project/pyproj/ 
-[7]: https://cloud.google.com/dataflow
-[8]: https://cloud.google.com/shell
-[9]: https://www.terraform.io/
-[10]: https://cloud.google.com/dataflow/docs/guides/using-custom-containers

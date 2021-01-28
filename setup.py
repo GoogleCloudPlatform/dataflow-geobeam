@@ -19,7 +19,7 @@ from __future__ import absolute_import
 import setuptools
 from distutils.command.build import build as _build
 from distutils.core import setup
-
+import geobeam
 
 REQUIRED_PACKAGES = [
     'apache_beam>=2.25.0',
@@ -39,7 +39,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='geobeam',
-    version='0.0.1',
+    version=geobeam.VERSION,
     author='Travis Webb',
     author_email='traviswebb@google.com',
     description='geobeam adds GIS capabilities to your Apache Beam pipelines',

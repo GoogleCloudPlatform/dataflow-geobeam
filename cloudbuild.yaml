@@ -12,20 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+substitutions:
+  _VERSION: 'latest'
+
 steps:
   # build base image
   - name: 'gcr.io/cloud-builders/docker'
     id: base
-    args: ['build', '-f', 'build/Dockerfile', '-t', 'gcr.io/dataflow-geobeam/base:3.2.1', '.']
+    args: ['build', '-f', 'Dockerfile', '-t', 'gcr.io/dataflow-geobeam/base:$_VERSION', '.']
 
   # build examples image
   - name: 'gcr.io/cloud-builders/docker'
     id: example
-    args: ['build', '-t', 'gcr.io/dataflow-geobeam/example:3.2.1', '.']
+    args: ['build', '-f', 'geobeam/examples/Dockerfile', '-t', 'gcr.io/dataflow-geobeam/example:$_VERSION', '.']
     waitFor: ['base']
+
+  - name: 'gcr.io/dataflow-geobeam/base:$_VERSION'
+    waitFor: ['base']
+    entrypoint: 'bash'
+    args:
+      - -c
+      - |
+        pip install twine
+        python setup.py sdist bdist_wheel
+        twine check dist
   
 
 images: [
   'gcr.io/dataflow-geobeam/base',
   'gcr.io/dataflow-geobeam/example'
 ]
+
+
