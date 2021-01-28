@@ -1,17 +1,23 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-Copyright 2021 Google LLC
+Example pipeline that loads a DEM (digital elevation model) raster into
+Bigquery using the `STREAMING_INSERTS` method.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+`STREAMING_INSERTS` is suitable for small-ish geometries, such as points or
+simple polygons.
 """
 
 import logging
@@ -24,21 +30,26 @@ from apache_beam.options.pipeline_options import PipelineOptions
 
 
 def format_record(element, band_column):
+    """
+    Format the tuple received from GeotiffSource into a record readable by
+    `beam.io.WriteToBigQuery()`. Convert the floating-point meters into
+    rounded centimeters to store as INT64 in order to support clustering
+    on this value column (elev).
+    """
+
     value, geom = element
 
-    # convert to integer centimeters so that this column can be clustered
     return {
         band_column: int(value * 100),
         'geom': json.dumps(geom)
     }
 
 
-def filter_nodata(element):
-    v, g, nodata = element
-    return nodata is not True
-
-
 def run(pipeline_args, known_args):
+    """
+    Run the pipeline
+    """
+
     from geobeam.io import GeotiffSource
 
     pipeline_options = PipelineOptions(pipeline_args)

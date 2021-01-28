@@ -1,17 +1,20 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-Copyright 2021 Google LLC
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+This package contains Apache Beam I/O connectors for reading from spatial data
+files.
 """
 
 import math
@@ -31,6 +34,9 @@ class GeotiffSource(filebasedsource.FileBasedSource):
     is stored in RAM, so make sure you specify a machine_type with enough RAM
     to hold the entire raster image.
 
+        p | beam.io.Read(GeotiffSource(file_pattern))
+          | beam.Map(print)
+
     Args:
         file_pattern (str): required, passed to FileBasedSource.
         band_number (int, optional): Defaults to `1`. the band to read from
@@ -49,13 +55,10 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         in_epsg (int, optional): override the source projection of your input
             raster in case its missing or incorrect
 
-    Returns:
+    Yields:
         generator of (`value`, `geom`) tuples. The data type of `value` is
         determined by the raster band it came from.
 
-    Example:
-        p | beam.io.Read(GeotiffSource(file_pattern))
-          | beam.Map(print)
     """
 
     def read_records(self, file_name, range_tracker):
@@ -151,6 +154,9 @@ class ShapefileSource(filebasedsource.FileBasedSource):
     The given file(s) should be a zip archive containing the .shp file
     alongside the .dbf and .prj files.
 
+        p | beam.io.Read(ShapefileSource(file_pattern))
+          | beam.Map(print)
+
     Args:
         layer_name (str, optional): the name of the layer you want to read.
             Required the zipfile contains multiple layers.
@@ -159,13 +165,10 @@ class ShapefileSource(filebasedsource.FileBasedSource):
         in_epsg (int, optional): override the source projection of your input
             shapefile in case of a missing or incorrect .prj file
 
-    Returns:
+    Yields:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
         all of the feature properties. `geom` is the geometry.
 
-    Example:
-        p | beam.io.Read(ShapefileSource(file_pattern))
-          | beam.Map(print)
     """
 
     def read_records(self, file_name, range_tracker):
@@ -232,6 +235,9 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
     The given file(s) should be a zip archive containing .gdb geodatabase
     directory.
 
+        p | beam.io.Read(GeodatabaseSource(file_pattern))
+          | beam.Map(print)
+
     Args:
         gdb_name (str): Required. the name of the .gdb directory in the archive,
             e.g. `FRD_510104_Coastal_GeoDatabase_20160708.gdb`
@@ -242,13 +248,10 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         in_epsg (int, optional): override the source projection of your input
             shapefile in case of a missing or incorrect CRS
 
-    Returns:
+    Yields:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
         all of the feature properties. `geom` is the geometry.
 
-    Example:
-        p | beam.io.Read(GeodatabaseSource(file_pattern))
-          | beam.Map(print)
     """
 
     def read_records(self, file_name, range_tracker):

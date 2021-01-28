@@ -8,3 +8,5 @@ build/lib
 build/bdist*
 *.tar.gz
 *key.*
+*.pdf
+docs.md

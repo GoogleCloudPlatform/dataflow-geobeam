@@ -1,17 +1,22 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-Copyright 2021 Google LLC
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Loads FRD (Flood Risk Database) layers into Bigquery using the `FILE_LOADS`
+insertion method. `FILE_LOADS` should be used when individual geometries
+can be large and complex to avoid the size limits of the `STREAMING_INSERTS`
+method. See: https://cloud.google.com/bigquery/quotas#streaming_inserts.
 """
 
 import logging
@@ -24,6 +29,13 @@ from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 
 def format_record(element):
+    """
+    Format the tuple received from GeodatabaseSource into a record that can be
+    inserted into BigQuery. It simplifies the geometry to reduce storage size,
+    and calls gdal MakeValid() to correct any invalid geometries before
+    inserting.
+    """
+
     from osgeo import ogr
 
     props, geom = element
@@ -41,10 +53,17 @@ def format_record(element):
 
 
 def filter_invalid(element):
+    """
+    Filter out geometries where MakeValid() returned None. Used with `beam.Filter()`.
+    """
     return element is not None
 
 
 def run(pipeline_args, known_args):
+    """
+    Run the pipeline
+    """
+
     from geobeam.io import GeodatabaseSource
 
     pipeline_options = PipelineOptions([

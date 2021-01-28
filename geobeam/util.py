@@ -1,17 +1,20 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
-Copyright 2021 Google LLC
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+This module contains utility functions that make working with geosaptial
+data in Google Cloud easier.
 """
 
 BQ_FIELD_TYPES = {
@@ -28,6 +31,8 @@ BQ_FIELD_TYPES = {
 
 def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
     """Generate a Bigquery table schema from a geospatial file
+    Usage:
+        python -m geobeam.util get_bigquery_schema ...args
 
     Args:
         filepath (str): full path to the input file
@@ -75,10 +80,12 @@ if __name__ == '__main__':
     import json
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('method', metavar='method', type=str)
     parser.add_argument('--file', type=str)
     parser.add_argument('--layer_name', type=str, default=None)
     parser.add_argument('--gdb_name', type=str, default=None)
     args, _ = parser.parse_known_args()
 
-    schema = get_bigquery_schema(args.file, args.layer_name, args.gdb_name)
-    print(json.dumps(schema, indent=2))
+    if args.method == 'get_bigquery_schema':
+        schema = get_bigquery_schema(args.file, args.layer_name, args.gdb_name)
+        print(json.dumps(schema, indent=4))

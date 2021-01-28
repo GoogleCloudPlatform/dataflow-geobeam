@@ -1,5 +1,3 @@
-# dataflow-geobeam
-
 geobeam adds GIS capabilities to your Apache Beam pipelines.
 
 ## What does geobeam do?
@@ -9,6 +7,8 @@ geobeam installs GDAL, PROJ4, and other related libraries onto your
 Dataflow worker machines, and provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.25.0/apache_beam.io.filebasedsource.html)
 classes that make it easy to read, process, and write geospatial data. `geobeam` can also
 understand vector layer definitions and auto-generate Bigquery schemas.
+
+[**Full Documentation**](https://storage.googleapis.com/geobeam/docs/all.pdf)
 
 ### Supported input types
 
@@ -124,7 +124,7 @@ See `geobeam/examples/` for complete examples.
 ## Examples
 
 A number of example pipelines are available in the `geobeam/examples/` folder.
-To run them in your Google Cloud project, run the included [terraform](https://www.terraform.io/) file to set up the Bigquery dataset and tables.
+To run them in your Google Cloud project, run the included [terraform](https://www.terraform.io) file to set up the Bigquery dataset and tables.
 
 Open up Bigquery GeoViz to visualize your data.
 
