@@ -17,17 +17,20 @@ substitutions:
 
 steps:
   # build base image
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: gcr.io/kaniko-project/executor
     id: base
-    args: ['build', '-f', 'Dockerfile', '-t', 'gcr.io/dataflow-geobeam/base:$_VERSION', '.']
+    args:
+      - --dockerfile=Dockerfile
+      - --destination=gcr.io/${PROJECT_ID}/base:$_VERSION
+      - --cache=true
 
   # build examples image
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: gcr.io/cloud-builders/docker
     id: example
     args: ['build', '-f', 'geobeam/examples/Dockerfile', '-t', 'gcr.io/dataflow-geobeam/example:$_VERSION', '.']
     waitFor: ['base']
 
-  - name: 'gcr.io/dataflow-geobeam/base:$_VERSION'
+  - name: gcr.io/dataflow-geobeam/base:$_VERSION
     waitFor: ['base']
     entrypoint: 'bash'
     args:
@@ -35,12 +38,28 @@ steps:
       - |
         pip install twine
         python setup.py sdist bdist_wheel
-        twine check dist
+        twine check dist/*
+
+  - name: python:3.8-buster
+    id: make_docs_markdown
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        python -m pip install pdoc3 apache_beam
+        pdoc --pdf geobeam > /workspace/docs.md
+        sed -i '/-----=/ s//-----=\n\n/g' /workspace/docs.md
+
+
+  - name: gcr.io/cloud-builders/docker
+    id: make_docs_pdf
+    args: ['run', '--rm', '--volume', '/workspace:/workspace', 'pandoc/latex', '/workspace/docs.md', '-o', '/workspace/docs.pdf', '--pdf-engine=xelatex']
+
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    args: ['gsutil', 'cp', '/workspace/docs.pdf', 'gs://geobeam/docs/all.pdf']
   
 
 images: [
-  'gcr.io/dataflow-geobeam/base',
   'gcr.io/dataflow-geobeam/example'
 ]
-
-

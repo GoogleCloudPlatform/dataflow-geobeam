@@ -16,4 +16,4 @@
 ..include:: ../README.md
 """
 
-VERSION = '0.0.1-test'
+VERSION = '0.0.3'
