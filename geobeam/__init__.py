@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-..include:: ../README.md
+geobeam root namespace.
 """
 
-VERSION = '0.0.3'
+__version__ = '0.0.3'
