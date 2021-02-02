@@ -37,7 +37,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 
 setup(
     name='geobeam',
-    version=geobeam.VERSION,
+    version=geobeam.__version__,
     author='Travis Webb',
     author_email='traviswebb@google.com',
     description='geobeam adds GIS capabilities to your Apache Beam pipelines',

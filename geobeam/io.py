@@ -88,7 +88,8 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         with self.open_file(file_name) as f, MemoryFile(f.read()) as m, m.open() as src:
-            src_crs = _GeoSourceUtils.validate_crs(src.crs.to_dict(), self.in_epsg)
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(
+                    src.crs, self.in_epsg)
 
             block_windows = list([win for ji, win in src.block_windows()])
             num_windows = len(block_windows)
@@ -122,8 +123,6 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                 else:
                     block = src.read(self.band_number, window=cur_window, masked=True)
 
-                wgs84, w, h = calculate_default_transform(src_crs, 'epsg:4326',
-                        cur_window.width, cur_window.height, *win_bounds)
 
                 logging.debug(json.dumps({
                     'msg': 'read_records.try_claim',
@@ -135,6 +134,10 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                 }, default=str))
 
                 if self.centroid_only:
+                    wgs84, w, h = calculate_default_transform(src_crs,
+                        'epsg:4326', cur_window.width, cur_window.height,
+                        *win_bounds)
+
                     for j, i in numpy.ndindex(block.shape):
                         x, y = ((i + 0.5), (j - 0.5)) * wgs84
 
@@ -142,16 +145,12 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
                 else:
                     for (g, v) in shapes(block, transform=cur_transform):
-                        geom = shape(transform.transform_geom(src_crs, 'epsg:4326', g))
-                        geom = geom.buffer(0)
-
-                        if geom.is_valid:
-                            yield (v, geom.__geo_interface__)
+                        if not is_wgs84:
+                            geom = transform.transform_geom(src_crs, 'epsg:4326', g)
                         else:
-                            logging.info(json.dumps({
-                                'msg': 'read_records.INVALID_GEOM',
-                                'geom': geom.__geo_interface__
-                            }))
+                            geom = g
+
+                        yield (v, geom)
 
                 next_pos = next_pos + (window_bytes * self.merge_blocks)
                 #next_pos = next_pos + window_bytes
@@ -341,8 +340,10 @@ class _GeoSourceUtils():
     """Utility methods for the FileBasedSource reader classes"""
 
     @staticmethod
-    def validate_crs(src_crs, in_epsg):
+    def validate_crs(_src_crs, in_epsg):
         from fiona import crs
+
+        src_crs = _src_crs.to_dict()
 
         if in_epsg is not None:
             in_crs = crs.from_epsg(in_epsg)
@@ -357,4 +358,6 @@ class _GeoSourceUtils():
             logging.error('--in_epsg must be specified because raster CRS is empty')
             raise Exception()
 
-        return src_crs
+        is_wgs84 = _src_crs.to_epsg() == 4326
+
+        return is_wgs84, src_crs

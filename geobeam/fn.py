@@ -19,27 +19,25 @@ geometries in your pipeline
 
 def make_valid(element):
     """
-    Runs the OGR MakeValid function on a geometry, and returns a new, valid
-    geometry in a tuple (props, geom). Returns `None` if the geometry cannot
+    Attempt to make a geometry valid. Returns `None` if the geometry cannot
     be made valid.
 
     Example:
-    ```
+    .. code-block:: python
+
         p | beam.Map(geobeam.fn.make_valid)
           | beam.Map(geobeam.fn.filter_invalid)
-    ```
     """
-    from osgeo import ogr
-    import json
+    from shapely.geometry import shape
 
     props, geom = element
-    geom = ogr.CreateGeometryFromJson(json.dumps(geom))
-    valid_geom = geom.MakeValid()
 
-    if valid_geom is None:
+    geom = shape(geom).buffer(0)
+
+    if geom.is_valid:
+        return (props, geom.__geo_interface__)
+    else:
         return None
-
-    return (props, json.loads(valid_geom.ExportToJson()))
 
 
 def filter_invalid(element):
@@ -49,33 +47,56 @@ def filter_invalid(element):
     Use with fn.make_valid to filter out geometries that are invalid.
 
     Example:
+    .. code-block:: python
 
-         p | beam.Map(geobeam.fn.filter_invalid)
+        p | beam.Map(geobeam.fn.make_valid)
+          | beam.Map(geobeam.fn.filter_invalid)
     """
 
+    if element is None:
+        return False
+
     props, geom = element
+
+    if geom is None:
+        return False
 
     return shape(geom).is_valid
 
 
-def format_record(element, band_column=None):
+def format_record(element, band_column=None, band_type='int'):
     """
     Format the tuple received from the geobeam file source into a record
     that can be inserted into BigQuery. If using a raster source, the
     bands and band_column will be combined.
 
+    Args:
+        band_column (str, optional): the name of the raster band column
+        band_type (type, optional): Default to int. The data type of the
+            raster band column to store in the database.
+
     Example:
-    ```
+    .. code-block:: python
+
         # vector
         p | beam.Map(geobeam.fn.format_record)
 
         # raster
-        p | beam.Map(geobeam.fn.format_record, band_column='elev')
-    ```
+        p | beam.Map(geobeam.fn.format_record,
+            band_column='elev', band_type=float)
     """
-    props, geom = element
+    import json
 
-    if band_column:
-        return { band_column: props, 'geom': geom }
+    props, geom = element
+    cast = eval(band_type)
+
+    if band_column and band_type:
+        return {
+            band_column: cast(props),
+            'geom': json.dumps(geom)
+        }
     else:
-        return { **props, 'geom': geom }
+        return {
+            **props,
+            'geom': json.dumps(geom)
+        }

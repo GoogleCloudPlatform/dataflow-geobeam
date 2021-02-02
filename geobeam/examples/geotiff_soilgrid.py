@@ -39,7 +39,10 @@ def run(pipeline_args, known_args):
          | beam.io.Read(GeotiffSource(known_args.gcs_url,
              band_number=known_args.band_number,
              merge_blocks=known_args.merge_blocks))
-         | 'FormatRecords' >> beam.Map(geobeam.fn.format_record, known_args.band_column)
+         | 'MakeValid' >> beam.Map(geobeam.fn.make_valid)
+         | 'FilterInvalid' >> beam.Filter(geobeam.fn.filter_invalid)
+         | 'FormatRecords' >> beam.Map(geobeam.fn.format_record,
+             known_args.band_column, known_args.band_type)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
@@ -60,6 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('--table')
     parser.add_argument('--band_column', default='value')
     parser.add_argument('--band_number', type=int, default=1)
+    parser.add_argument('--band_type', type=str, default='int')
     parser.add_argument('--merge_blocks', type=int, default=1)
     known_args, pipeline_args = parser.parse_known_args()
 

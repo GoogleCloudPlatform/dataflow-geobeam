@@ -42,26 +42,22 @@ steps:
         twine check dist/*
 
   - name: python:3.8-buster
-    id: make_docs_markdown
+    id: make_docs
     entrypoint: bash
     args:
       - -c
       - |
-        python -m pip install pdoc3 apache_beam
-        pdoc --pdf geobeam > /workspace/docs.md
-        sed -i '/-----=/ s//-----=\n\n/g' /workspace/docs.md
-
-
-  - name: gcr.io/cloud-builders/docker
-    id: make_docs_pdf
-    args: [
-      'run', '--rm', '--volume', '/workspace:/workspace', 'pandoc/latex:2.11.4',
-      '/workspace/docs.md', '-o', '/workspace/docs.pdf',
-      '--pdf-engine=xelatex']
+        apt update
+        apt install latexmk texlive-latex-recommended texlive-pictures texlive-latex-extra -y
+        python -m pip install sphinx m2r2 apache_beam
+        make latexpdf
+        cp build/latex/geobeam.pdf /workspace/docs.pdf
 
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    id: publish_docs
     args: ['gsutil', 'cp', '/workspace/docs.pdf', 'gs://geobeam/docs/all.pdf']
+
 
   - name: hashicorp/terraform:0.14.5
     id: 'tf apply'
