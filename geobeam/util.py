@@ -29,9 +29,26 @@ BQ_FIELD_TYPES = {
 }
 
 
+def get_bigquery_raster_schema(band_column='value', band_type='INT64'):
+    """
+    Generate Bigquery table schema for a raster
+    """
+    return [
+        {
+            'name': band_column,
+            'type': band_type
+        },
+        {
+            'name': 'geom',
+            'type': 'GEOGRAPHY'
+        }
+    ]
+
+
 def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
-    """Generate a Bigquery table schema from a geospatial file
-    Usage:
+    """
+    Generate a Bigquery table schema from a geospatial file
+
         python -m geobeam.util get_bigquery_schema ...args
 
     Args:

@@ -1,4 +1,4 @@
-FROM gcr.io/dataflow-geobeam/base:3.2.1
+FROM gcr.io/dataflow-geobeam/base
 
 COPY geobeam/examples/requirements.txt ./requirements.txt
 RUN pip install --upgrade pip

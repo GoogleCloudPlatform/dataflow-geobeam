@@ -20,7 +20,7 @@ from distutils.core import setup
 import geobeam
 
 REQUIRED_PACKAGES = [
-    'apache_beam>=2.25.0',
+    'apache_beam>=2.27.0',
     'pyproj==3.0.0.post1',
     'fiona==1.8.18',
     'shapely==1.7.1',

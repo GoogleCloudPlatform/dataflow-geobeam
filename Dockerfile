@@ -1,4 +1,4 @@
-FROM apache/beam_python3.8_sdk:2.25.0
+FROM apache/beam_python3.8_sdk:2.27.0
 
 ARG WORKDIR=/pipeline
 RUN mkdir -p ${WORKDIR}

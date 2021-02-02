@@ -39,12 +39,13 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
     Args:
         file_pattern (str): required, passed to FileBasedSource.
-        band_number (int, optional): Defaults to `1`. the band to read from
+        band_number (int, optional): Defaults to `1`. the band(s) to read from
             the raster.
-        skip_nodata (bool, optional): Defaults to `True`. True to ignore
-            nodata values in the raster band; False to include them.
+        include_nodata (bool, optional): Defaults to `False`. False to ignore
+            nodata values in the raster band; True to include them.
         centroid_only (bool, optional): Defaults to `False`. True to set geom
-            to the centroid Point, False to include the entire Polygon.
+            to the centroid Point, False to include the entire Polygon. Do not
+            use with the merge_blocks option.
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
             This can be useful if your data is in a bespoke CRS that requires a
@@ -54,6 +55,12 @@ class GeotiffSource(filebasedsource.FileBasedSource):
             BigQuery.
         in_epsg (int, optional): override the source projection of your input
             raster in case its missing or incorrect
+        merge_blocks (int, optional): Defaults to `32`. Number of windows
+            to combine during polygonization. Setting this to a larger number
+            will result in fewer file reads and possible improved overall
+            performance. Setting this value too high (~thousands) may cause file
+            read issues. Set to a smaller number if your raster blocks are
+            large (256x256 or larger). Do not use with the centroid_only option.
 
     Yields:
         generator of (`value`, `geom`) tuples. The data type of `value` is
@@ -65,8 +72,8 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         from rasterio.io import MemoryFile
         from rasterio.features import shapes
         from rasterio.warp import calculate_default_transform
-        from rasterio.windows import bounds
-        from shapely.geometry import Point
+        from rasterio.windows import bounds, union
+        from shapely.geometry import Point, shape
         from fiona import transform
         import json
         import numpy
@@ -80,70 +87,88 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        with self.open_file(file_name) as f, MemoryFile(f.read()) as m:
-            with m.open() as src:
-                src_crs = _GeoSourceUtils.validate_crs(src.crs.to_dict(), self.in_epsg)
-                nodata_val = src.nodata
+        with self.open_file(file_name) as f, MemoryFile(f.read()) as m, m.open() as src:
+            src_crs = _GeoSourceUtils.validate_crs(src.crs.to_dict(), self.in_epsg)
 
-                block_windows = list([win for ji, win in src.block_windows()])
-                num_windows = len(block_windows)
-                window_bytes = math.floor(total_bytes / num_windows)
-                i = 0
+            block_windows = list([win for ji, win in src.block_windows()])
+            num_windows = len(block_windows)
+            window_bytes = math.floor(total_bytes / num_windows)
+            i = 0
 
-                logging.info(json.dumps({
-                    'msg': 'read_records',
+            logging.info(json.dumps({
+                'msg': 'read_records',
+                'file_name': file_name,
+                'file_size_mb': round(total_bytes / 1048576),
+                'block_windows': num_windows,
+                'merge_blocks': self.merge_blocks,
+                'include_nodata': self.include_nodata,
+                'src_profile': src.profile
+            }, default=str))
+
+            while range_tracker.try_claim(next_pos):
+                i = math.ceil(next_pos / window_bytes)
+                if i >= num_windows:
+                    break
+
+                slice_end = min(i + self.merge_blocks, num_windows)
+                window_slice = block_windows[i:slice_end]
+                cur_window = union(window_slice)
+                #cur_window = block_windows[i]
+                cur_transform = src.window_transform(cur_window)
+                win_bounds = bounds(cur_window, cur_transform)
+
+                if self.include_nodata:
+                    block = src.read(self.band_number, window=cur_window)
+                else:
+                    block = src.read(self.band_number, window=cur_window, masked=True)
+
+                wgs84, w, h = calculate_default_transform(src_crs, 'epsg:4326',
+                        cur_window.width, cur_window.height, *win_bounds)
+
+                logging.debug(json.dumps({
+                    'msg': 'read_records.try_claim',
                     'file_name': file_name,
-                    'file_size_mb': total_bytes / 1048576,
-                    'src_profile': src.profile,
-                    'block_windows': num_windows
+                    'band_number': self.band_number,
+                    'next_pos': next_pos,
+                    'i': i,
+                    'window': cur_window
                 }, default=str))
 
-                while range_tracker.try_claim(next_pos):
-                    i = math.ceil(next_pos / window_bytes)
-                    if i >= num_windows:
-                        break
+                if self.centroid_only:
+                    for j, i in numpy.ndindex(block.shape):
+                        x, y = ((i + 0.5), (j - 0.5)) * wgs84
 
-                    cur_window = block_windows[i]
-                    cur_transform = src.window_transform(cur_window)
-                    win_bounds = bounds(cur_window, cur_transform)
-                    block = src.read(self.band_number, window=cur_window)
-                    wgs84, w, h = calculate_default_transform(src_crs, 'epsg:4326',
-                            cur_window.width, cur_window.height, *win_bounds)
+                        yield (block[j][i], Point(x, y).__geo_interface__)
 
-                    logging.info(json.dumps({
-                        'msg': 'read_records.try_claim',
-                        'file_name': file_name,
-                        'band': self.band_number,
-                        'next_pos': next_pos,
-                        'i': i,
-                        'window': cur_window
-                    }, default=str))
+                else:
+                    for (g, v) in shapes(block, transform=cur_transform):
+                        geom = shape(transform.transform_geom(src_crs, 'epsg:4326', g))
+                        geom = geom.buffer(0)
 
-                    if self.centroid_only:
-                        for j, i in numpy.ndindex(block.shape):
-                            x, y = (i, j) * wgs84
+                        if geom.is_valid:
+                            yield (v, geom.__geo_interface__)
+                        else:
+                            logging.info(json.dumps({
+                                'msg': 'read_records.INVALID_GEOM',
+                                'geom': geom.__geo_interface__
+                            }))
 
-                            yield (block[j][i], Point(x, y).__geo_interface__)
+                next_pos = next_pos + (window_bytes * self.merge_blocks)
+                #next_pos = next_pos + window_bytes
 
-                    else:
-                        for (g, v) in shapes(block, transform=cur_transform):
-                            if self.skip_nodata and v == nodata_val:
-                                continue
-
-                            if not self.skip_reproject:
-                                g = transform.transform_geom(src_crs, 'epsg:4326', g)
-
-                            yield (v, g)
-
-                    next_pos = next_pos + window_bytes
-
-    def __init__(self, file_pattern, band_number=1, skip_nodata=True,
-                 skip_reproject=False, centroid_only=False, in_epsg=None, **kwargs):
-        self.band_number = band_number
-        self.skip_nodata = skip_nodata
+    def __init__(self, file_pattern, band_number=1, include_nodata=False,
+                 skip_reproject=False, centroid_only=False, in_epsg=None,
+                 merge_blocks=16, **kwargs):
+        self.include_nodata = include_nodata
         self.skip_reproject = skip_reproject
         self.centroid_only = centroid_only
         self.in_epsg = in_epsg
+        self.band_number = band_number
+
+        if merge_blocks > 10000 or merge_blocks < 1:
+            raise Exception('merge_blocks option must be 1 >= x < 10000')
+
+        self.merge_blocks = merge_blocks
 
         super(GeotiffSource, self).__init__(file_pattern)
 
@@ -173,7 +198,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
 
     def read_records(self, file_name, range_tracker):
         from fiona import BytesCollection
-        from fiona import transform
+        from fiona.transform import transform_geom
         import json
 
         total_bytes = self.estimate_size()
@@ -197,6 +222,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
             i = 0
 
             logging.info(json.dumps({
+                'msg': 'read_records',
                 'file_name': file_name,
                 'profile': collection.profile,
                 'num_features': num_features,
@@ -213,7 +239,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
                 props = cur_feature['properties']
 
                 if not self.skip_reproject:
-                    geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
+                    geom = transform_geom(src_crs, 'epsg:4326', geom)
 
                 yield (props, geom)
 
@@ -277,6 +303,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             features = list(collection)
 
             logging.info(json.dumps({
+                'msg': 'read_records',
                 'file_name': file_name,
                 'profile': collection.profile,
                 'num_features': num_features,

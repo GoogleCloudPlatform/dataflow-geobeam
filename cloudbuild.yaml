@@ -21,13 +21,14 @@ steps:
     id: base
     args:
       - --dockerfile=Dockerfile
-      - --destination=gcr.io/${PROJECT_ID}/base:$_VERSION
+      - --destination=gcr.io/dataflow-geobeam/base:$_VERSION
       - --cache=true
 
   # build examples image
   - name: gcr.io/cloud-builders/docker
     id: example
-    args: ['build', '-f', 'geobeam/examples/Dockerfile', '-t', 'gcr.io/dataflow-geobeam/example:$_VERSION', '.']
+    args: ['build', '-f', 'geobeam/examples/Dockerfile',
+      '-t', 'gcr.io/dataflow-geobeam/example:$_VERSION', '.']
     waitFor: ['base']
 
   - name: gcr.io/dataflow-geobeam/base:$_VERSION
@@ -53,11 +54,23 @@ steps:
 
   - name: gcr.io/cloud-builders/docker
     id: make_docs_pdf
-    args: ['run', '--rm', '--volume', '/workspace:/workspace', 'pandoc/latex', '/workspace/docs.md', '-o', '/workspace/docs.pdf', '--pdf-engine=xelatex']
+    args: [
+      'run', '--rm', '--volume', '/workspace:/workspace', 'pandoc/latex:2.11.4',
+      '/workspace/docs.md', '-o', '/workspace/docs.pdf',
+      '--pdf-engine=xelatex']
 
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
     args: ['gsutil', 'cp', '/workspace/docs.pdf', 'gs://geobeam/docs/all.pdf']
+
+  - name: hashicorp/terraform:0.14.5
+    id: 'tf apply'
+    entrypoint: 'sh'
+    args:
+      - -c
+      - |
+        terraform init
+        terraform apply --auto-approve
   
 
 images: [
