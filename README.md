@@ -138,8 +138,8 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 | `include_nodata`   | Raster  | True to include `nodata` values | `False` | No
 | `centroid_only`    | Raster  | True to only read pixel centroids | `False` | No
 | `merge_blocks`     | Raster  | Number of block windows to combine during read. Larger values will generate larger, better-connected polygons. | | No
-| `layer_name`       | Vector  | Name of layer to read | Yes
-| `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | Yes, for GDB files
+| `layer_name`       | Vector  | Name of layer to read | | Yes
+| `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | | Yes, for GDB files
 
 
 ## License
