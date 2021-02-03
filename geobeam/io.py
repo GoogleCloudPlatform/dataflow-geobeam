@@ -145,7 +145,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
                 else:
                     for (g, v) in shapes(block, transform=cur_transform):
-                        if not is_wgs84:
+                        if not is_wgs84 or self.skip_reproject:
                             geom = transform.transform_geom(src_crs, 'epsg:4326', g)
                         else:
                             geom = g

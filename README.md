@@ -5,10 +5,10 @@ geobeam adds GIS capabilities to your Apache Beam pipelines.
 `geobeam` enables you to ingest and analyze massive amounts of geospatial data in parallel using [Dataflow](https://cloud.google.com/dataflow).
 geobeam installs GDAL, PROJ4, and other related libraries onto your
 Dataflow worker machines, and provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.25.0/apache_beam.io.filebasedsource.html)
-classes that make it easy to read, process, and write geospatial data. `geobeam` can also
-understand vector layer definitions and auto-generate Bigquery schemas.
+classes that make it easy to read, process, and write geospatial data. `geobeam` also provides a set of helpful
+Apache Beam transforms to use in your pipelines. 
 
-[**Full Documentation**](https://storage.googleapis.com/geobeam/docs/all.pdf)
+See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf) for complete API specification.
 
 ### Supported input types
 
@@ -30,14 +30,6 @@ understand vector layer definitions and auto-generate Bigquery schemas.
 | [shapely](https://pypi.org/project/Shapely/)    | 1.7.1       | manipulation and analysis of geometric objects in the cartesian plane
 | [pyproj](https://pypi.org/project/pyproj/)      | 3.0.0       | cartographic projections and coordinate transformations library
 
-### Dataflow templates
-
-| **Template**              | **Description** |
-|:--------------------------|:----------------|
-| GeoTiff -> Bigquery       | polygonize a Geotiff raster and load into Bigquery
-| Shapefile -> Bigquery     | load a shapefile layer into Bigquery
-| Geodatabase -> Bigquery   | load a geodatabase layer into Bigquery
-
 
 ## How to Use
 
@@ -49,10 +41,9 @@ pip install geobeam
 ```
 
 2. Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
-*Note:* make sure you use a version-tagged image, e.g. `3.2.1`. Do not use `latest`.
 
 ```dockerfile
-FROM gcr.io/dataflow-geobeam/base:3.2.1
+FROM gcr.io/dataflow-geobeam/base
 COPY . .
 ```
 
@@ -65,16 +56,21 @@ docker push gcr.io/<project_id>/example
 3. Run in Dataflow
 
 ```
-python -m geobeam.examples.geotiff_dem
-  --runner DataflowRunner
-  --worker_harness_container_image=gcr.io/<project_id>/example
-  --experiment use_runner_v2
-  --temp_location gs://<bucket>
-  --gcs_url <input_file>
-  --dataset=geobeam
-  --table=dem
-  --band_column=elev
-  --centroid_only true
+# run the geotiff_soilgrid example in dataflow
+python -m geobeam.examples.geotiff_soilgrid
+  --gcs_url gs://geobeam/examples/AWCh3_M_sl1_250m_ll.tif
+  --dataset=examples
+  --table=soilgrid
+  --band_column=h3
+  --runner=DataflowRunner
+  --worker_harness_container_image=gcr.io/dataflow-geobeam/example
+  --experiment=use_runner_v2
+  --temp_location=<temp bucket>
+  --service_account_email <service account>
+  --region us-central1
+  --max_num_workers 6
+  --machine_type c2-standard-16
+  --merge_blocks 64
 ```
 
 
@@ -82,40 +78,28 @@ python -m geobeam.examples.geotiff_dem
 
 ##### Polygonize Raster
 ```py
-def format_record(element, band_column):
-  (value, geom) = element
-  return { band_column: value, 'geom': json.dumps(geom) }
-
 def run(options):
   from geobeam.io import GeotiffSource
+  from geobeam.fn import format_record
 
   with beam.Pipeline(options) as p:
     (p  | 'ReadRaster' >> beam.io.Read(GeotiffSource(gcs_url))
-        | 'FormatRecord' >> beam.Map(format_record, 'elev')
+        | 'FormatRecord' >> beam.Map(format_record, 'elev', 'float')
         | 'WriteToBigquery' >> beam.io.WriteToBigQuery('geo.dem'))
 ```
 
 ##### Validate and Simplify Shapefile
 
 ```py
-def validate_and_simplify(element):
-  from osgeo import ogr
-  import json
-
-  (props, geom) = element
-
-  ogr_geom = ogr.CreateGeometryFromJson(json.dumps(geom))
-  ogr_geom = ogr_geom.MakeValid()
-  ogr_geom.SimplifyPreserveTopology(0.00001)
-
-  return { **props, 'geom': ogr_geom.ExportToJson() }
-
 def run(options):
   from geobeam.io import ShapefileSource
+  from geobeam.fn import make_valid, filter_invalid, format_record
 
   with beam.Pipeline(options) as p:
     (p  | 'ReadShapefile' >> beam.io.Read(ShapefileSource(gcs_url))
-        | 'ValidateAndSimplify' >> beam.Map(validate_and_simplify)
+        | 'Validate' >> beam.Map(make_valid)
+        | 'FilterInvalid' >> beam.Filter(filter_invalid)
+        | 'FormatRecord' >> beam.Map(format_record)
         | 'WriteToBigquery' >> beam.io.WriteToBigQuery('geo.parcel'))
 ```
 
@@ -124,11 +108,38 @@ See `geobeam/examples/` for complete examples.
 ## Examples
 
 A number of example pipelines are available in the `geobeam/examples/` folder.
-To run them in your Google Cloud project, run the included [terraform](https://www.terraform.io) file to set up the Bigquery dataset and tables.
+To run them in your Google Cloud project, run the included [terraform](https://www.terraform.io) file to set up the Bigquery dataset and tables used by the example pipelines.
 
 Open up Bigquery GeoViz to visualize your data.
 
 ![](https://storage.googleapis.com/geobeam/examples/geobeam-nfhl-geoviz-example.png)
+
+## Included Transforms
+
+The `geobeam.fn` module includes several [Beam Transforms](https://beam.apache.org/documentation/programming-guide/#transforms) that you can use in your pipelines.
+
+| **Module**      | **Description**
+|:----------------|:------------|
+| `geobeam.fn.make_valid`     | Attempt to make all geometries valid. 
+| `geobeam.fn.filter_invalid` | Filter out invalid geometries that cannot be made valid
+| `geobeam.fn.format_record`  | Format the (props, geom) tuple received from a FileSource into a `dict` that can be inserted into the destination table
+
+
+## Execution parameters
+
+Each FileSource accepts several parameters that you can use to configure how your data is loaded and processed.
+These can be parsed as pipeline arguments and passed into the respective FileSources as seen in the examples pipelines.
+
+| **Parameter**      | **Input type** | **Description** | **Default** | **Required?**
+|:-------------------|:---------------|:----------------|:------------|---------------|
+| `skip_reproject`   | All     | True to skip reprojection during read | `False` | No
+| `in_epsg`          | All     | An [EPSG integer](https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset) to override the input source CRS to reproject from | | No
+| `band_number`      | Raster  | The raster band to read from | `1` | No
+| `include_nodata`   | Raster  | True to include `nodata` values | `False` | No
+| `centroid_only`    | Raster  | True to only read pixel centroids | `False` | No
+| `merge_blocks`     | Raster  | Number of block windows to combine during read. Larger values will generate larger, better-connected polygons. | | No
+| `layer_name`       | Vector  | Name of layer to read | Yes
+| `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | Yes, for GDB files
 
 
 ## License
