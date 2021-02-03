@@ -58,9 +58,10 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         merge_blocks (int, optional): Defaults to `32`. Number of windows
             to combine during polygonization. Setting this to a larger number
             will result in fewer file reads and possible improved overall
-            performance. Setting this value too high (~thousands) may cause file
-            read issues. Set to a smaller number if your raster blocks are
-            large (256x256 or larger). Do not use with the centroid_only option.
+            performance. Setting this value too high (>100) may cause file
+            read issues and worker timeouts. Set to a smaller number if your
+            raster blocks are large (256x256 or larger). Do not use with the
+            centroid_only option.
 
     Yields:
         generator of (`value`, `geom`) tuples. The data type of `value` is
