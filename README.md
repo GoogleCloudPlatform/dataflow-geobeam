@@ -39,25 +39,15 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 
 Use the `geobeam` python module to build a custom pipeline.
 
-### 1. Install the module
+## 1. Install the module
 ```
 pip install geobeam
 ```
 
-### 2. Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
 
-```dockerfile
-FROM gcr.io/dataflow-geobeam/base
-COPY . .
-```
+## 2. Run
 
-```bash
-# build locally with docker
-docker build -t gcr.io/<project_id>/example
-docker push gcr.io/<project_id>/example
-```
-
-### 3a. Run locally
+### Run locally or in [Cloud Shell](https://cloud.google.com/shell)
 
 ```
 python -m geobeam.examples.geotiff_dem \
@@ -72,7 +62,25 @@ python -m geobeam.examples.geotiff_dem \
 
 > Note: Some of the provided examples may take a very long time to run locally.
 
-### 3b. Run in Dataflow
+### Run in Dataflow
+
+#### Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
+
+```dockerfile
+FROM gcr.io/dataflow-geobeam/base
+COPY . .
+```
+
+```bash
+# build locally with docker
+docker build -t gcr.io/<project_id>/example
+docker push gcr.io/<project_id>/example
+
+# or build with Cloud Build
+gcloud builds submit --tag gcr.io/<project_id>/example
+```
+
+### Start the Dataflow job
 
 ```
 # run the geotiff_soilgrid example in dataflow
