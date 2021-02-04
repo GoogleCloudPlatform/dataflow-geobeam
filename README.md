@@ -52,7 +52,7 @@ pip install geobeam
 python -m geobeam.examples.geotiff_dem \
   --gcs_url gs://geobeam/examples/dem-clipped-test.tif \
   --dataset=examples \
-  --table=dem
+  --table=dem \
   --band_column=elev \
   --centroid_only=true \
   --runner=DirectRunner \
