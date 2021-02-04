@@ -10,6 +10,10 @@ Apache Beam transforms to use in your pipelines.
 
 See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf) for complete API specification.
 
+### Requirements
+- Apache Beam 2.25+
+- Python 3.7+
+
 ### Supported input types
 
 | **File format** | **Data type** | **Geobeam class**  |
@@ -63,6 +67,7 @@ python -m geobeam.examples.geotiff_dem \
   --centroid_only=true \
   --runner=DirectRunner \
   --temp_location <temp gs://>
+  --project <project_id>
 ```
 
 > Note: Some of the provided examples may take a very long time to run locally.
