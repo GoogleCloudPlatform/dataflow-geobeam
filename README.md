@@ -32,7 +32,6 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 | [rasterio](https://pypi.org/project/rasterio/)  | 1.1.8       | reads and writes geospatial raster data
 | [fiona](https://pypi.org/project/Fiona/)        | 1.8.18      | reads and writes geospatial vector data
 | [shapely](https://pypi.org/project/Shapely/)    | 1.7.1       | manipulation and analysis of geometric objects in the cartesian plane
-| [pyproj](https://pypi.org/project/pyproj/)      | 3.0.0       | cartographic projections and coordinate transformations library
 
 
 ## How to Use
