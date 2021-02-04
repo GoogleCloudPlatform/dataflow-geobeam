@@ -64,7 +64,9 @@ python -m geobeam.examples.geotiff_dem \
 
 ### Run in Dataflow
 
-#### Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
+#### Write a Dockerfile
+
+This will run in Dataflow as a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
 
 ```dockerfile
 FROM gcr.io/dataflow-geobeam/base
@@ -80,7 +82,7 @@ docker push gcr.io/<project_id>/example
 gcloud builds submit --tag gcr.io/<project_id>/example
 ```
 
-### Start the Dataflow job
+#### Start the Dataflow job
 
 ```
 # run the geotiff_soilgrid example in dataflow
