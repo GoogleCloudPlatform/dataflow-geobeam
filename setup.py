@@ -21,7 +21,6 @@ import geobeam
 
 REQUIRED_PACKAGES = [
     'apache_beam[gcp]>=2.27.0',
-    'pyproj==3.0.0.post1',
     'fiona==1.8.18',
     'shapely==1.7.1',
     'rasterio==1.1.8'
