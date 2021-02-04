@@ -17,51 +17,17 @@ Example pipeline that loads the NFHL (National Flood Hazard Layer) into
 BigQuery.
 """
 
-import logging
-import json
-import argparse
-
-import apache_beam as beam
-from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
-from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
-
-
-def format_record(element):
-    """
-    Format the tuple received from ShapefileSource into a record that
-    can be inserted into BigQuery. Validate each geometry using GDAL's
-    `MakeValid()` function.
-    """
-
-    from osgeo import ogr
-
-    props, geom = element
-
-    ogr_geom = ogr.CreateGeometryFromJson(json.dumps(geom))
-    ogr_geom = ogr_geom.MakeValid()
-
-    if ogr_geom is None:
-        return None
-
-    return {
-        **props,
-        'geom': ogr_geom.ExportToJson()
-    }
-
-
-def filter_invalid(element):
-    """
-    Filter out invalid geometries
-    """
-
-    return element is not None
-
 
 def run(pipeline_args, known_args):
     """
     Invoked by the Beam runner
     """
+
+    import apache_beam as beam
+    from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
+    from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
     from geobeam.io import ShapefileSource
+    from geobeam.fn import format_record, make_valid, filter_invalid
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink',
@@ -73,18 +39,22 @@ def run(pipeline_args, known_args):
         (p
          | beam.io.Read(ShapefileSource(known_args.gcs_url,
              layer_name=known_args.layer_name))
-         | 'FormatRecords' >> beam.Map(format_record)
+         | 'MakeValid' >> beam.Map(make_valid)
          | 'FilterInvalid' >> beam.Filter(filter_invalid)
+         | 'FormatRecords' >> beam.Map(format_record)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
-             custom_gcs_temp_location=known_args.custom_gcs_temp_location,
-             write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+             write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_NEVER))
 
+
 if __name__ == '__main__':
+    import logging
+    import argparse
+
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser()
@@ -93,7 +63,6 @@ if __name__ == '__main__':
     parser.add_argument('--table')
     parser.add_argument('--layer_name')
     parser.add_argument('--in_epsg', type=int, default=None)
-    parser.add_argument('--custom_gcs_temp_location')
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)

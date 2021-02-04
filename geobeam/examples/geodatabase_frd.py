@@ -19,82 +19,45 @@ can be large and complex to avoid the size limits of the `STREAMING_INSERTS`
 method. See: https://cloud.google.com/bigquery/quotas#streaming_inserts.
 """
 
-import logging
-import json
-import argparse
-
-import apache_beam as beam
-from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
-from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
-
-
-def format_record(element):
-    """
-    Format the tuple received from GeodatabaseSource into a record that can be
-    inserted into BigQuery. It simplifies the geometry to reduce storage size,
-    and calls gdal MakeValid() to correct any invalid geometries before
-    inserting.
-    """
-
-    from osgeo import ogr
-
-    props, geom = element
-
-    ogr_geom = ogr.CreateGeometryFromJson(json.dumps(geom))
-    ogr_geom = ogr_geom.MakeValid()
-
-    if ogr_geom is None:
-        return None
-
-    return {
-        **props,
-        'geom': ogr_geom.ExportToJson()
-    }
-
-
-def filter_invalid(element):
-    """
-    Filter out geometries where MakeValid() returned None. Used with `beam.Filter()`.
-    """
-    return element is not None
-
 
 def run(pipeline_args, known_args):
     """
     Run the pipeline
     """
 
+    import apache_beam as beam
+    from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
+    from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+
     from geobeam.io import GeodatabaseSource
+    from geobeam.fn import make_valid, filter_invalid, format_record
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink',
         '--setup_file',  '/dataflow/template/setup.py'
     ] + pipeline_args)
 
-    pipeline_options.view_as(SetupOptions).save_main_session = True
-
     with beam.Pipeline(options=pipeline_options) as p:
         (p
          | beam.io.Read(GeodatabaseSource(known_args.gcs_url,
              layer_name=known_args.layer_name,
              gdb_name=known_args.gdb_name))
-         | 'FormatRecords' >> beam.Map(format_record)
+         | 'MakeValid' >> beam.Map(make_valid)
          | 'FilterInvalid' >> beam.Filter(filter_invalid)
+         | 'FormatRecords' >> beam.Map(format_record)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              custom_gcs_temp_location=known_args.custom_gcs_temp_location,
-             write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+             write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_NEVER))
 
 
 if __name__ == '__main__':
-    import sys
-    from os import path
-    dir_path = path.dirname(path.realpath(__file__))
-    sys.path.insert(0, path.realpath(path.join(dir_path, '../')))
+    import logging
+    import argparse
 
     logging.getLogger().setLevel(logging.INFO)
 

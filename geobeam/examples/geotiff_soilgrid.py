@@ -51,6 +51,7 @@ def run(pipeline_args, known_args):
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
 
+
 if __name__ == '__main__':
     import logging
     import argparse

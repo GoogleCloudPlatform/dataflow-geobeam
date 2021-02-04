@@ -60,8 +60,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
             will result in fewer file reads and possible improved overall
             performance. Setting this value too high (>100) may cause file
             read issues and worker timeouts. Set to a smaller number if your
-            raster blocks are large (256x256 or larger). Do not use with the
-            centroid_only option.
+            raster blocks are large (256x256 or larger).
 
     Yields:
         generator of (`value`, `geom`) tuples. The data type of `value` is
@@ -72,16 +71,15 @@ class GeotiffSource(filebasedsource.FileBasedSource):
     def read_records(self, file_name, range_tracker):
         from rasterio.io import MemoryFile
         from rasterio.features import shapes
-        from rasterio.warp import calculate_default_transform
-        from rasterio.windows import bounds, union
-        from shapely.geometry import Point, shape
+        from rasterio.windows import union
+        from shapely.geometry import shape
         from fiona import transform
         import json
-        import numpy
 
         total_bytes = self.estimate_size()
 
         next_pos = range_tracker.start_position()
+        end_pos = range_tracker.stop_position()
 
         def split_points_unclaimed(stop_pos):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
@@ -109,21 +107,22 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
             while range_tracker.try_claim(next_pos):
                 i = math.ceil(next_pos / window_bytes)
+                end_i = math.floor(end_pos / window_bytes)
                 if i >= num_windows:
                     break
 
-                slice_end = min(i + self.merge_blocks, num_windows)
+                actual_merge_blocks = max(1, min(self.merge_blocks, end_i - i))
+
+                slice_end = min(i + actual_merge_blocks, num_windows)
                 window_slice = block_windows[i:slice_end]
                 cur_window = union(window_slice)
-                #cur_window = block_windows[i]
                 cur_transform = src.window_transform(cur_window)
-                win_bounds = bounds(cur_window, cur_transform)
+                block_mask = src.read_masks(self.band_number, window=cur_window)
 
                 if self.include_nodata:
                     block = src.read(self.band_number, window=cur_window)
                 else:
                     block = src.read(self.band_number, window=cur_window, masked=True)
-
 
                 logging.debug(json.dumps({
                     'msg': 'read_records.try_claim',
@@ -134,31 +133,22 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                     'window': cur_window
                 }, default=str))
 
-                if self.centroid_only:
-                    wgs84, w, h = calculate_default_transform(src_crs,
-                        'epsg:4326', cur_window.width, cur_window.height,
-                        *win_bounds)
+                for (g, v) in shapes(block, block_mask, transform=cur_transform):
+                    if not is_wgs84 or self.skip_reproject:
+                        geom = transform.transform_geom(src_crs, 'epsg:4326', g)
+                    else:
+                        geom = g
 
-                    for j, i in numpy.ndindex(block.shape):
-                        x, y = ((i + 0.5), (j - 0.5)) * wgs84
+                    if self.centroid_only:
+                        geom = shape(geom).centroid.__geo_interface__
 
-                        yield (block[j][i], Point(x, y).__geo_interface__)
+                    yield (v, geom)
 
-                else:
-                    for (g, v) in shapes(block, transform=cur_transform):
-                        if not is_wgs84 or self.skip_reproject:
-                            geom = transform.transform_geom(src_crs, 'epsg:4326', g)
-                        else:
-                            geom = g
-
-                        yield (v, geom)
-
-                next_pos = next_pos + (window_bytes * self.merge_blocks)
-                #next_pos = next_pos + window_bytes
+                next_pos = next_pos + (window_bytes * actual_merge_blocks)
 
     def __init__(self, file_pattern, band_number=1, include_nodata=False,
                  skip_reproject=False, centroid_only=False, in_epsg=None,
-                 merge_blocks=16, **kwargs):
+                 merge_blocks=32, **kwargs):
         self.include_nodata = include_nodata
         self.skip_reproject = skip_reproject
         self.centroid_only = centroid_only

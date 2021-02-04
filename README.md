@@ -35,12 +35,12 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 
 Use the `geobeam` python module to build a custom pipeline.
 
-1. Install the module
+### 1. Install the module
 ```
 pip install geobeam
 ```
 
-2. Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
+### 2. Write a Dockerfile to build a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
 
 ```dockerfile
 FROM gcr.io/dataflow-geobeam/base
@@ -53,23 +53,37 @@ docker build -t gcr.io/<project_id>/example
 docker push gcr.io/<project_id>/example
 ```
 
-3. Run in Dataflow
+### 3a. Run locally
+
+```
+python -m geobeam.examples.geotiff_dem \
+  --gcs_url gs://geobeam/examples/dem-clipped-test.tif \
+  --dataset=examples \
+  --band_column=elev \
+  --centroid_only=true \
+  --runner=DirectRunner \
+  --temp_location <temp gs://>
+```
+
+> Note: Some of the provided examples may take a very long time to run locally.
+
+### 3b. Run in Dataflow
 
 ```
 # run the geotiff_soilgrid example in dataflow
-python -m geobeam.examples.geotiff_soilgrid
-  --gcs_url gs://geobeam/examples/AWCh3_M_sl1_250m_ll.tif
-  --dataset=examples
-  --table=soilgrid
-  --band_column=h3
-  --runner=DataflowRunner
-  --worker_harness_container_image=gcr.io/dataflow-geobeam/example
-  --experiment=use_runner_v2
-  --temp_location=<temp bucket>
-  --service_account_email <service account>
-  --region us-central1
-  --max_num_workers 6
-  --machine_type c2-standard-16
+python -m geobeam.examples.geotiff_soilgrid \
+  --gcs_url gs://geobeam/examples/AWCh3_M_sl1_250m_ll.tif \
+  --dataset=examples \
+  --table=soilgrid \
+  --band_column=h3 \
+  --runner=DataflowRunner \
+  --worker_harness_container_image=gcr.io/dataflow-geobeam/example \
+  --experiment=use_runner_v2 \
+  --temp_location=<temp bucket> \
+  --service_account_email <service account> \
+  --region us-central1 \
+  --max_num_workers 2 \
+  --machine_type c2-standard-30 \
   --merge_blocks 64
 ```
 

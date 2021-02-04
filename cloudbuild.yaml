@@ -41,18 +41,21 @@ steps:
         python setup.py sdist bdist_wheel
         twine check dist/*
 
-  - name: python:3.8-buster
+  - name: gcr.io/kaniko-project/executor
+    id: sphinx_docs_builder
+    args:
+      - --dockerfile=docs/Dockerfile
+      - --destination=gcr.io/dataflow-geobeam/sphinx
+      - --cache=true
+
+  - name: gcr.io/dataflow-geobeam/sphinx
     id: make_docs
     entrypoint: bash
     args:
       - -c
       - |
-        apt update
-        apt install latexmk texlive-latex-recommended texlive-pictures texlive-latex-extra -y
-        python -m pip install sphinx m2r2 apache_beam
         make latexpdf
         cp build/latex/geobeam.pdf /workspace/docs.pdf
-
 
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
     id: publish_docs
