@@ -131,7 +131,17 @@ To run them in your Google Cloud project, run the included [terraform](https://w
 
 Open up Bigquery GeoViz to visualize your data.
 
+### Shapefile Example
+
+The National Flood Hazard Layer loaded from a shapefile. Example pipeline at [`geobeam/examples/shapefile_nfhl.py`](https://github.com/GoogleCloudPlatform/dataflow-geobeam/blob/main/geobeam/examples/shapefile_nfhl.py)
+
 ![](https://storage.googleapis.com/geobeam/examples/geobeam-nfhl-geoviz-example.png)
+
+### Raster Example
+
+The Digital Elevation Model is a high-resolution model of elevation measurements at 1-meter resolution. (Values converted to centimeters). Example pipeline: [`geobeam/examples/geotiff_dem.py`](https://github.com/GoogleCloudPlatform/dataflow-geobeam/blob/main/geobeam/examples/geotiff_dem.py).
+
+![](https://storage.googleapis.com/geobeam/examples/geobeam-dem-example-geoviz.png)
 
 ## Included Transforms
 
