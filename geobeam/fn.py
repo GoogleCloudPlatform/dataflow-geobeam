@@ -17,6 +17,7 @@ Beam functions, transforms, and filters that can be used to process
 geometries in your pipeline
 """
 
+
 def make_valid(element):
     """
     Attempt to make a geometry valid. Returns `None` if the geometry cannot
@@ -72,7 +73,7 @@ def format_record(element, band_column=None, band_type='int'):
 
     Args:
         band_column (str, optional): the name of the raster band column
-        band_type (type, optional): Default to int. The data type of the
+        band_type (str, optional): Default to int. The data type of the
             raster band column to store in the database.
 
     Example:

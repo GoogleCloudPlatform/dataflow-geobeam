@@ -23,7 +23,7 @@ module "bigquery" {
       table_id = "parcel"
       schema = "geobeam/examples/parcel_schema.json"
       time_partitioning = null
-      clustering = ["geom_bbox"]
+      clustering = ["geom", "TAX_ACCT"]
       expiration_time = null
       labels = null
     },

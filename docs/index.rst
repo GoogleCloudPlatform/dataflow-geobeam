@@ -15,6 +15,10 @@ README
 ======
 .. mdinclude:: ../README.md
 
+Examples
+======
+.. mdinclude:: ../geobeam/examples/README.md
+
 
 Indices and tables
 ==================

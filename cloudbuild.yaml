@@ -25,10 +25,12 @@ steps:
       - --cache=true
 
   # build examples image
-  - name: gcr.io/cloud-builders/docker
+  - name: gcr.io/kaniko-project/executor
     id: example
-    args: ['build', '-f', 'geobeam/examples/Dockerfile',
-      '-t', 'gcr.io/dataflow-geobeam/example:$_VERSION', '.']
+    args:
+      - --dockerfile=geobeam/examples/Dockerfile
+      - --destination=gcr.io/dataflow-geobeam/example:$_VERSION
+      - --cache=true
     waitFor: ['base']
 
   - name: gcr.io/dataflow-geobeam/base:$_VERSION
@@ -63,14 +65,27 @@ steps:
 
 
   - name: hashicorp/terraform:0.14.5
-    id: 'tf apply'
+    id: tf_apply
     entrypoint: 'sh'
     args:
       - -c
       - |
         terraform init
         terraform apply --auto-approve
-  
+
+
+  - name: gcr.io/dataflow-geobeam/example
+    id: test_shapefile
+    entrypoint: 'python'
+    args: [
+      '-m', 'geobeam.examples.shapefile_parcel',
+      '--gcs_url', 'gs://geobeam/examples/ghent-parcels-shp.zip',
+      '--dataset', 'examples',
+      '--table', 'parcel',
+      '--runner', 'DirectRunner',
+      '--temp_location', 'gs://geobeam-pipeline-tmp/',
+      '--project', 'dataflow-geobeam'
+    ]
 
 images: [
   'gcr.io/dataflow-geobeam/example'
