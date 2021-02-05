@@ -205,7 +205,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
             else:
                 collection = BytesCollection(f.read())
 
-            src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
@@ -283,7 +283,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
         with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
             collection = mem.open(self.gdb_name, layer=self.layer_name)
-            src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
@@ -334,7 +334,12 @@ class _GeoSourceUtils():
     def validate_crs(_src_crs, in_epsg):
         from fiona import crs
 
-        src_crs = _src_crs.to_dict()
+        if type(_src_crs) == dict:
+            src_crs = _src_crs
+            is_wgs84 = src_crs['init'] == 'epsg:4326'
+        else:
+            src_crs = _src_crs.to_dict()
+            is_wgs84 = _src_crs.to_epsg() == 4326
 
         if in_epsg is not None:
             in_crs = crs.from_epsg(in_epsg)
@@ -349,6 +354,5 @@ class _GeoSourceUtils():
             logging.error('--in_epsg must be specified because raster CRS is empty')
             raise Exception()
 
-        is_wgs84 = _src_crs.to_epsg() == 4326
 
         return is_wgs84, src_crs
