@@ -33,8 +33,6 @@ def run(pipeline_args, known_args):
         '--experiments', 'use_beam_bq_sink',
     ] + pipeline_args)
 
-    pipeline_options.view_as(SetupOptions).save_main_session = True
-
     with beam.Pipeline(options=pipeline_options) as p:
         (p
          | beam.io.Read(ShapefileSource(known_args.gcs_url,

@@ -13,24 +13,27 @@
 # limitations under the License.
 
 """
-Loads FRD (Flood Risk Database) layers into Bigquery using the `FILE_LOADS`
-insertion method. `FILE_LOADS` should be used when individual geometries
-can be large and complex to avoid the size limits of the `STREAMING_INSERTS`
-method. See: https://cloud.google.com/bigquery/quotas#streaming_inserts.
+Example pipeline that loads a county parcel shape dataset into BigQuery.
 """
+
+
+def typecast_fields(record):
+    return {
+        **record,
+        'LRSN': str(record['LRSN'])
+    }
 
 
 def run(pipeline_args, known_args):
     """
-    Run the pipeline
+    Invoked by the Beam runner
     """
 
     import apache_beam as beam
     from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
     from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
-
-    from geobeam.io import GeodatabaseSource
-    from geobeam.fn import make_valid, filter_invalid, format_record
+    from geobeam.io import ShapefileSource
+    from geobeam.fn import format_record, make_valid, filter_invalid
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink',
@@ -38,12 +41,12 @@ def run(pipeline_args, known_args):
 
     with beam.Pipeline(options=pipeline_options) as p:
         (p
-         | beam.io.Read(GeodatabaseSource(known_args.gcs_url,
-             layer_name=known_args.layer_name,
-             gdb_name=known_args.gdb_name))
+         | beam.io.Read(ShapefileSource(known_args.gcs_url,
+             layer_name=known_args.layer_name))
          | 'MakeValid' >> beam.Map(make_valid)
          | 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'FormatRecords' >> beam.Map(format_record)
+         | 'TypecastRecords' >> beam.Map(typecast_fields)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
@@ -64,7 +67,6 @@ if __name__ == '__main__':
     parser.add_argument('--dataset')
     parser.add_argument('--table')
     parser.add_argument('--layer_name')
-    parser.add_argument('--gdb_name')
     parser.add_argument('--in_epsg', type=int, default=None)
     known_args, pipeline_args = parser.parse_known_args()
 
