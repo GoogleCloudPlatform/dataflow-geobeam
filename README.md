@@ -4,15 +4,17 @@ geobeam adds GIS capabilities to your Apache Beam pipelines.
 
 `geobeam` enables you to ingest and analyze massive amounts of geospatial data in parallel using [Dataflow](https://cloud.google.com/dataflow).
 geobeam installs GDAL, PROJ4, and other related libraries onto your
-Dataflow worker machines, and provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.25.0/apache_beam.io.filebasedsource.html)
+Dataflow worker machines, and provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.27.0/apache_beam.io.filebasedsource.html)
 classes that make it easy to read, process, and write geospatial data. `geobeam` also provides a set of helpful
 Apache Beam transforms to use in your pipelines. 
 
 See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf) for complete API specification.
 
 ### Requirements
-- Apache Beam 2.25+
+- Apache Beam 2.27+
 - Python 3.7+
+
+**Note**: Make sure the Python version used to run the pipline matches the version in the built container.
 
 ### Supported input types
 
@@ -36,17 +38,14 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 
 ## How to Use
 
-Use the `geobeam` python module to build a custom pipeline.
-
-## 1. Install the module
+### 1. Install the module
 ```
 pip install geobeam
 ```
 
+### 2. Run
 
-## 2. Run
-
-### Run locally or in [Cloud Shell](https://cloud.google.com/shell)
+#### Run locally or in [Cloud Shell](https://cloud.google.com/shell)
 
 ```
 python -m geobeam.examples.geotiff_dem \
@@ -60,16 +59,25 @@ python -m geobeam.examples.geotiff_dem \
   --project <project_id>
 ```
 
-> Note: Some of the provided examples may take a very long time to run locally.
+> Note: Some of the provided examples may take a very long time to run locally...
 
-### Run in Dataflow
+#### Run in Dataflow
 
-#### Write a Dockerfile
+##### Write a Dockerfile
 
 This will run in Dataflow as a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
+See [`geobeam/examples/Dockerfile`] for an example that installed the latest geobeam from source.
+
 
 ```dockerfile
 FROM gcr.io/dataflow-geobeam/base
+# FROM gcr.io/dataflow-geobeam/base-py37
+
+RUN pip install geobeam
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
 COPY . .
 ```
 
@@ -79,10 +87,17 @@ docker build -t gcr.io/<project_id>/example
 docker push gcr.io/<project_id>/example
 
 # or build with Cloud Build
-gcloud builds submit --tag gcr.io/<project_id>/example
+gcloud builds submit --tag gcr.io/<project_id>/<name> --timeout=3600s --machine-type=n1-highcpu-8
 ```
 
 #### Start the Dataflow job
+
+##### Note on Python versions
+
+If you are starting a Dataflow job on a machine running Python 3.7, you must use the images suffixed with **`py-37`**.
+(Cloud Shell runs Python 3.7 by default, as of Feb 2021).
+A separate version of the base image is built for Python 3.7, and is available at `gcr.io/dataflow-geobeam/base-py37`.
+The Python 3.7-compatible examples image is similarly-named `gcr.io/dataflow-geobeam/example-py37`
 
 ```
 # run the geotiff_soilgrid example in dataflow
@@ -103,9 +118,9 @@ python -m geobeam.examples.geotiff_soilgrid \
 ```
 
 
-#### Examples
+## Examples
 
-##### Polygonize Raster
+#### Polygonize Raster
 ```py
 def run(options):
   from geobeam.io import GeotiffSource
@@ -117,7 +132,7 @@ def run(options):
         | 'WriteToBigquery' >> beam.io.WriteToBigQuery('geo.dem'))
 ```
 
-##### Validate and Simplify Shapefile
+#### Validate and Simplify Shapefile
 
 ```py
 def run(options):
@@ -133,8 +148,6 @@ def run(options):
 ```
 
 See `geobeam/examples/` for complete examples.
-
-## Examples
 
 A number of example pipelines are available in the `geobeam/examples/` folder.
 To run them in your Google Cloud project, run the included [terraform](https://www.terraform.io) file to set up the Bigquery dataset and tables used by the example pipelines.

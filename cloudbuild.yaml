@@ -16,7 +16,15 @@ substitutions:
   _VERSION: 'latest'
 
 steps:
-  # build base image
+  # build base image for python 3.7
+  - name: gcr.io/kaniko-project/executor
+    id: base-py37
+    args:
+      - --dockerfile=Dockerfile.py37
+      - --destination=gcr.io/dataflow-geobeam/base-py37:$_VERSION
+      - --cache=true
+        #
+  # build base image for python 3.8+
   - name: gcr.io/kaniko-project/executor
     id: base
     args:
@@ -24,7 +32,16 @@ steps:
       - --destination=gcr.io/dataflow-geobeam/base:$_VERSION
       - --cache=true
 
-  # build examples image
+  # build examples image for Python 3.7
+  - name: gcr.io/kaniko-project/executor
+    id: example-py37
+    args:
+      - --dockerfile=geobeam/examples/Dockerfile.py37
+      - --destination=gcr.io/dataflow-geobeam/example-py37:$_VERSION
+      - --cache=true
+    waitFor: ['base']
+
+   # build examples image for Python 3.8+
   - name: gcr.io/kaniko-project/executor
     id: example
     args:
@@ -63,7 +80,6 @@ steps:
     id: publish_docs
     args: ['gsutil', 'cp', '/workspace/docs.pdf', 'gs://geobeam/docs/all.pdf']
 
-
   - name: hashicorp/terraform:0.14.5
     id: tf_apply
     entrypoint: 'sh'
@@ -72,7 +88,6 @@ steps:
       - |
         terraform init
         terraform apply --auto-approve
-
 
   - name: gcr.io/dataflow-geobeam/example
     id: test_shapefile
@@ -86,7 +101,3 @@ steps:
       '--temp_location', 'gs://geobeam-pipeline-tmp/',
       '--project', 'dataflow-geobeam'
     ]
-
-images: [
-  'gcr.io/dataflow-geobeam/example'
-]

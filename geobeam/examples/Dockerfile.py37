@@ -12,8 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-geobeam root namespace.
-"""
+FROM gcr.io/dataflow-geobeam/base-py37
 
-__version__ = '0.1.3'
+COPY geobeam/examples/requirements.txt ./requirements.txt
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+COPY . .
+
+RUN python setup.py bdist_wheel
+RUN export VERSION=$(python -c 'import geobeam; print(geobeam.__version__)') \
+  && pip install dist/geobeam-$VERSION-py3-none-any.whl
