@@ -3,10 +3,9 @@ geobeam adds GIS capabilities to your Apache Beam pipelines.
 ## What does geobeam do?
 
 `geobeam` enables you to ingest and analyze massive amounts of geospatial data in parallel using [Dataflow](https://cloud.google.com/dataflow).
-geobeam installs GDAL, PROJ4, and other related libraries onto your
-Dataflow worker machines, and provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.27.0/apache_beam.io.filebasedsource.html)
-classes that make it easy to read, process, and write geospatial data. `geobeam` also provides a set of helpful
-Apache Beam transforms to use in your pipelines. 
+geobeam provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.27.0/apache_beam.io.filebasedsource.html)
+classes that make it easy to read, process, and write geospatial data, and provides a set of helpful
+Apache Beam transforms and utilities that make it easier to process GIS data in your Dataflow pipelines.
 
 See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf) for complete API specification.
 
@@ -14,7 +13,7 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 - Apache Beam 2.27+
 - Python 3.7+
 
-**Note**: Make sure the Python version used to run the pipline matches the version in the built container.
+> Note: Make sure the Python version used to run the pipeline matches the version in the built container.
 
 ### Supported input types
 
@@ -43,9 +42,14 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 pip install geobeam
 ```
 
-### 2. Run
+### 2. Write your pipeline
 
-#### Run locally or in [Cloud Shell](https://cloud.google.com/shell)
+Write a normal Apache Beam pipeline using one of `geobeam`s file sources.
+See [`geobeam/examples`](https://github.com/GoogleCloudPlatform/dataflow-geobeam/tree/main/geobeam/examples) for inspiration.
+
+### 3. Run
+
+#### Run locally
 
 ```
 python -m geobeam.examples.geotiff_dem \
@@ -58,6 +62,8 @@ python -m geobeam.examples.geotiff_dem \
   --temp_location <temp gs://> \
   --project <project_id>
 ```
+
+You can also run "locally" in [Cloud Shell](https://cloud.google.com/shell) using the [`py-37` container variants](https://github.com/GoogleCloudPlatform/dataflow-geobeam#note-on-python-versions)
 
 > Note: Some of the provided examples may take a very long time to run locally...
 
@@ -94,10 +100,10 @@ gcloud builds submit --tag gcr.io/<project_id>/<name> --timeout=3600s --machine-
 
 ##### Note on Python versions
 
-If you are starting a Dataflow job on a machine running Python 3.7, you must use the images suffixed with **`py-37`**.
-(Cloud Shell runs Python 3.7 by default, as of Feb 2021).
-A separate version of the base image is built for Python 3.7, and is available at `gcr.io/dataflow-geobeam/base-py37`.
-The Python 3.7-compatible examples image is similarly-named `gcr.io/dataflow-geobeam/example-py37`
+> If you are starting a Dataflow job on a machine running Python 3.7, you must use the images suffixed with **`py-37`**.
+> (Cloud Shell runs Python 3.7 by default, as of Feb 2021).
+> A separate version of the base image is built for Python 3.7, and is available at `gcr.io/dataflow-geobeam/base-py37`.
+> The Python 3.7-compatible examples image is similarly-named `gcr.io/dataflow-geobeam/example-py37`
 
 ```
 # run the geotiff_soilgrid example in dataflow
