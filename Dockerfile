@@ -33,7 +33,7 @@ RUN wget -q https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz \
     && make --quiet -j$(nproc) && make --quiet install \
     && cd $WORKDIR && rm -rf curl-${CURL_VERSION}.tar.gz curl-${CURL_VERSION}
 
-ENV GEOS_VERSION 3.9.0
+ENV GEOS_VERSION 3.9.1
 RUN wget -q https://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
     && tar -xjf geos-${GEOS_VERSION}.tar.bz2  \
     && cd geos-${GEOS_VERSION} \
