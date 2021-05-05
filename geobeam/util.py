@@ -107,6 +107,11 @@ def get_bigquery_schema_dataflow(filepath, layer_name=None, gdb_name=None):
         JSON: the schema in JSON that can be passed to the schema argument in WriteToBigQuery. Must use the parse_table_schema_from_json() from apache_beam.io.gcp.bigquery_tools
     """
 
+    from google.cloud import storage 
+    import fiona
+    import json
+    from fiona import BytesCollection
+
     bucket_name = gcs_url.split('/')[2]
     file_name = '/'.join(gcs_url.split('/')[3:])
     zip_name = gcs_url.split('/')[-1].split('.')[0]
