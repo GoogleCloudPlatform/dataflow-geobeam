@@ -23,7 +23,8 @@ REQUIRED_PACKAGES = [
     'apache_beam[gcp]>=2.27.0',
     'fiona==1.8.18',
     'shapely==1.7.1',
-    'rasterio==1.1.8'
+    'rasterio==1.1.8',
+    'esridump==1.10.1'
 ]
 
 

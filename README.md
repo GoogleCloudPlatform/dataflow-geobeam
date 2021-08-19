@@ -22,6 +22,8 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 | `tiff`         | raster        | `GeotiffSource`
 | `shp`          | vector        | `ShapefileSource`
 | `gdb`          | vector        | `GeodatabaseSource`
+| `json`         | vector        | `GeoJSONSource`
+| URL            | vector        | `ESRIServerSource`
 
 ### Included libraries
 
@@ -33,6 +35,7 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 | [rasterio](https://pypi.org/project/rasterio/)  | 1.1.8       | reads and writes geospatial raster data
 | [fiona](https://pypi.org/project/Fiona/)        | 1.8.18      | reads and writes geospatial vector data
 | [shapely](https://pypi.org/project/Shapely/)    | 1.7.1       | manipulation and analysis of geometric objects in the cartesian plane
+| [esridump](https://pypi.org/project/esridump/)  | 1.10.1      | read layer from ESRI server
 
 
 ## How to Use

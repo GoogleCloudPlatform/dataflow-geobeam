@@ -56,7 +56,7 @@ if __name__ == '__main__':
     import logging
     import argparse
 
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--gcs_url')
