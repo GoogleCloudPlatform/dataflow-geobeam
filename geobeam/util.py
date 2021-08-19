@@ -91,6 +91,83 @@ def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
 
     return bq_schema
 
+def get_bigquery_schema_dataflow(filepath, layer_name=None, gdb_name=None):
+    """
+    Generate a Bigquery table schema from a geospatial file hosted on a Google Cloud Storage bucket
+
+        from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
+
+        table_schema = parse_table_schema_from_json(get_bigquery_schema_dataflow(known_args.gcs_url, known_args.layer_name))
+
+    Args:
+        filepath (str): full path to the input file hosted on Google Cloud Storage
+        layer_name (str, optional): name of the layer, if file contains
+            multiple layers
+    Returns:
+        JSON: the schema in JSON that can be passed to the schema argument in WriteToBigQuery. Must use the parse_table_schema_from_json() from apache_beam.io.gcp.bigquery_tools
+    """
+
+    from google.cloud import storage 
+    import fiona
+    import json
+    from fiona import BytesCollection
+
+    bucket_name = gcs_url.split('/')[2]
+    file_name = '/'.join(gcs_url.split('/')[3:])
+    zip_name = gcs_url.split('/')[-1].split('.')[0]
+  
+    storage_client = storage.Client()
+    blob = storage_client.bucket(bucket_name).get_blob(file_name)
+    source_bucket = storage_client.bucket(bucket_name)
+    blob_uri = gcs_url
+
+    blob_2 = source_bucket.blob(file_name)
+    data = blob.download_as_string()
+    
+    profile = None
+
+    if gdb_name is not None:
+        with fiona.io.ZipMemoryFile(data) as zip:
+            with zip.open(f'{zip_name}.gdb', layer=gdb_name) as collection:
+                print(collection)
+                profile = collection.profile
+    elif layer_name is not None:
+        profile = BytesCollection(data, layer=layer_name).profile
+    else:
+        profile = fiona.open(gcs_url).profile
+            
+    from fiona import prop_type
+
+    BQ_FIELD_TYPES = {
+        'int': 'INT64',
+        'str': 'STRING',
+        'float': 'FLOAT64',
+        'bool': 'BOOL',
+        'date': 'DATE',
+        'time': 'TIME',
+        'datetime': 'DATETIME',
+        'bytes': 'BYTES'
+    }
+
+    bq_schema = []
+
+    for field_name, field_type in profile['schema']['properties'].items():
+        fiona_type = prop_type(field_type)
+        bq_type = BQ_FIELD_TYPES[fiona.schema.FIELD_TYPES_MAP_REV[fiona_type]]
+        bq_schema.append({
+            'name': field_name,
+            'type': bq_type
+        })
+
+    bq_schema.append({
+        'name': 'geom',
+        'type': 'GEOGRAPHY',
+        'description': '{} reprojected from {}. source: {}'.format(
+            profile['schema']['geometry'], profile['crs']['init'], profile['driver'])
+    })
+    
+    return json.JSONEncoder(sort_keys=True).encode({"fields": bq_schema})
+
 
 if __name__ == '__main__':
     import argparse

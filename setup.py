@@ -24,6 +24,7 @@ REQUIRED_PACKAGES = [
     'fiona==1.8.18',
     'shapely==1.7.1',
     'rasterio==1.1.8',
+    'google-cloud-storage==1.38.0',
     'esridump==1.10.1'
 ]
 

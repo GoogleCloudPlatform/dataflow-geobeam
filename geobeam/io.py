@@ -326,6 +326,159 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
         super(GeodatabaseSource, self).__init__(file_pattern)
 
+class GeoJSONSource(filebasedsource.FileBasedSource):
+    """A Beam FileBasedSource for reading GeoJSON Files.
+
+    The given file(s) should be a .geojson file.
+
+        p | beam.io.Read(GeoJSONSource(file_pattern))
+          | beam.Map(print)
+
+    Args:
+        skip_reproject (bool, optional): Defaults to `False`. True to return
+            `geom` in its original projection.
+        in_epsg (int, optional): override the source projection of your input
+            shapefile in case of a missing or incorrect .prj file
+
+    Yields:
+        generator of (`props`, `geom`) tuples. `props` is a `dict` containing
+        all of the feature properties. `geom` is the geometry.
+
+    """
+
+    def read_records(self, file_name, range_tracker):
+        import fiona
+        from fiona.transform import transform_geom
+        import json
+
+        total_bytes = self.estimate_size()
+        next_pos = range_tracker.start_position()
+
+        def split_points_unclaimed(stop_pos):
+            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+
+        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+
+        collection = fiona.open(self.file_name)
+        
+        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+
+        num_features = len(collection)
+        feature_bytes = math.floor(total_bytes / num_features)
+        i = 0
+
+        logging.info(json.dumps({
+            'msg': 'read_records',
+            'file_name': file_name,
+            'profile': collection.profile,
+            'num_features': num_features,
+            'total_bytes': total_bytes
+        }))
+
+        while range_tracker.try_claim(next_pos):
+            i = math.ceil(next_pos / feature_bytes)
+            if i >= num_features:
+                break
+
+            cur_feature = collection[i]
+            geom = cur_feature['geometry']
+            props = cur_feature['properties']
+
+            if not self.skip_reproject:
+                geom = transform_geom(src_crs, 'epsg:4326', geom)
+
+            yield (props, geom)
+
+            next_pos = next_pos + feature_bytes
+
+    def __init__(self, file_pattern, skip_reproject=False,
+                 in_epsg=None, **kwargs):
+
+        self.skip_reproject = skip_reproject
+        self.in_epsg = in_epsg
+
+        super(GeoJSONSource, self).__init__(file_pattern)
+
+class ESRIServerSource(filebasedsource.FileBasedSource):
+    """A Beam FileBasedSource for reading layers from an ESRI ArcGIS Server.
+
+    The given file(s) should be a link to a specific layer from the ArcGIS Server REST API
+    (ex. https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0)
+
+        p | beam.io.Read(ESRIServerSource(file_pattern))
+          | beam.Map(print)
+
+    Args:
+        skip_reproject (bool, optional): Defaults to `False`. True to return
+            `geom` in its original projection.
+        in_epsg (int, optional): override the source projection of your input
+            shapefile in case of a missing or incorrect .prj file
+
+    Yields:
+        generator of (`props`, `geom`) tuples. `props` is a `dict` containing
+        all of the feature properties. `geom` is the geometry.
+
+    """
+
+    def read_records(self, file_name, range_tracker):
+        from fiona import BytesCollection
+        from fiona.transform import transform_geom
+        import json
+        from esridump.dumper import EsriDumper
+
+        total_bytes = self.estimate_size()
+        next_pos = range_tracker.start_position()
+
+        def split_points_unclaimed(stop_pos):
+            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+
+        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+
+        esri_dump = EsriDumper(self.file_name)
+        
+        geojson = {
+        "type": "FeatureCollection",
+        "features": list(d) }
+
+        collection = BytesCollection(json.dumps(geojson, indent=2).encode('utf-8'))
+        
+        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+
+        num_features = len(collection)
+        feature_bytes = math.floor(total_bytes / num_features)
+        i = 0
+
+        logging.info(json.dumps({
+            'msg': 'read_records',
+            'file_name': file_name,
+            'profile': collection.profile,
+            'num_features': num_features,
+            'total_bytes': total_bytes
+        }))
+
+        while range_tracker.try_claim(next_pos):
+            i = math.ceil(next_pos / feature_bytes)
+            if i >= num_features:
+                break
+
+            cur_feature = collection[i]
+            geom = cur_feature['geometry']
+            props = cur_feature['properties']
+
+            if not self.skip_reproject:
+                geom = transform_geom(src_crs, 'epsg:4326', geom)
+
+            yield (props, geom)
+
+            next_pos = next_pos + feature_bytes
+
+    def __init__(self, file_pattern, skip_reproject=False,
+                 in_epsg=None, **kwargs):
+
+        self.skip_reproject = skip_reproject
+        self.in_epsg = in_epsg
+
+        super(GeoJSONSource, self).__init__(file_pattern)
 
 class _GeoSourceUtils():
     """Utility methods for the FileBasedSource reader classes"""
