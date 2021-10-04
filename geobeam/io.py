@@ -438,7 +438,7 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
         
         geojson = {
         "type": "FeatureCollection",
-        "features": list(d) }
+        "features": list(esri_dump) }
 
         collection = BytesCollection(json.dumps(geojson, indent=2).encode('utf-8'))
         
