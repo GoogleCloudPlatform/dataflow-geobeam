@@ -56,6 +56,7 @@ def run(pipeline_args, known_args):
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
+             schema=known_args.schema,
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
@@ -70,6 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('--gcs_url')
     parser.add_argument('--dataset')
     parser.add_argument('--table')
+    parser.add_argument('--schema')
     parser.add_argument('--band_column')
     parser.add_argument('--band_number', type=int, default=1)
     parser.add_argument('--skip_nodata', type=bool, default=True)

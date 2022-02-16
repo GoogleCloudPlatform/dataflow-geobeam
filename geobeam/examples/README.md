@@ -99,6 +99,7 @@ python -m geobeam.examples.geotiff_dem \
   --gcs_url gs://geobeam/examples/dem-clipped-test.tif \
   --dataset examples \
   --table dem \
+  --schema 'elev:INT64,geom:GEOGRAPHY'
   --band_column elev \
   --max_num_workers 3 \
   --machine_type c2-standard-30 \
