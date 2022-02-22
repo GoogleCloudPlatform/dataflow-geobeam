@@ -34,6 +34,9 @@ def run(pipeline_args, known_args):
     ] + pipeline_args)
 
     with beam.Pipeline(options=pipeline_options) as p:
+        
+        logging.info('Will be inserting column: {}'.format(known_args.band_column))
+        
         (p
          | beam.io.Read(GeotiffSource(known_args.gcs_url,
              band_number=known_args.band_number,
