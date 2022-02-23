@@ -28,6 +28,8 @@ def run(pipeline_args, known_args):
 
     from geobeam.io import GeotiffSource
     from geobeam.fn import format_record
+    from geobeam.fn import format_record
+    from geobeam.fn import format_record
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink'
@@ -42,8 +44,8 @@ def run(pipeline_args, known_args):
              band_number=known_args.band_number,
              centroid_only=known_args.centroid_only,
              merge_blocks=known_args.merge_blocks))
-         | 'MakeValid' >> beam.Map(geobeam.fn.make_valid)
-         | 'FilterInvalid' >> beam.Filter(geobeam.fn.filter_invalid)
+         | 'MakeValid' >> beam.Map(make_valid)
+         | 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
