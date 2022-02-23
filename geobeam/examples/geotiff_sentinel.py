@@ -28,8 +28,8 @@ def run(pipeline_args, known_args):
 
     from geobeam.io import GeotiffSource
     from geobeam.fn import format_record
-    from geobeam.fn import format_record
-    from geobeam.fn import format_record
+    from geobeam.fn import make_valid
+    from geobeam.fn import filter_invalid
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink'
