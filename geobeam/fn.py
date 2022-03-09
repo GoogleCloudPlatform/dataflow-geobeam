@@ -59,6 +59,9 @@ def filter_invalid(element):
 
     props, geom = element
 
+    if len(geom['coordinates']) == 0:
+        return False
+
     if geom is None:
         return False
 
