@@ -173,3 +173,36 @@ python -m geobeam.examples.shapefile_nfhl \
   --dataset examples \
   --table FLD_HAZ_AR
 ```
+
+## `geojson_stormwater`
+
+```
+bq mk --table <dataset>.stormwater geobeam/examples/stormwater_schema.json
+```
+
+### Run Locally
+
+```
+python -m geobeam.examples.geojson_stormwater \
+  --runner DirectRunner \
+  --project <your project> \
+  --temp_location <your temp bucket> \
+  --gcs_url gs://geobeam/examples/Stormwater_Pipes.geojson \
+  --dataset examples \
+  --table stormwater \
+```
+
+### Run in Dataflow
+
+```
+python -m geobeam.examples.geojson_stormwater \
+  --runner DataflowRunner \
+  --project <your project> \
+  --temp_location <your temp bucket> \
+  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
+  --experiment use_runner_v2 \
+  --service_account_email <your service account> \
+  --gcs_url gs://geobeam/examples/Stormwater_Pipes.geojson \
+  --dataset examples \
+  --table stormwater
+```
