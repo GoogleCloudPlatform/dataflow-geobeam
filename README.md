@@ -195,11 +195,12 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 |:-------------------|:---------------|:----------------|:------------|---------------|
 | `skip_reproject`   | All     | True to skip reprojection during read | `False` | No
 | `in_epsg`          | All     | An [EPSG integer](https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset) to override the input source CRS to reproject from | | No
+| `in_proj`          | All     | A [PROJ string](https://proj.org/usage/quickstart.html) to override the input source CRS | | No
 | `band_number`      | Raster  | The raster band to read from | `1` | No
 | `include_nodata`   | Raster  | True to include `nodata` values | `False` | No
 | `centroid_only`    | Raster  | True to only read pixel centroids | `False` | No
 | `merge_blocks`     | Raster  | Number of block windows to combine during read. Larger values will generate larger, better-connected polygons. | | No
-| `layer_name`       | Vector  | Name of layer to read | | Yes
+| `layer_name`       | Vector  | Name of layer to read | | Yes, for shapefiles
 | `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | | Yes, for GDB files
 
 
