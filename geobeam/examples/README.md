@@ -173,3 +173,39 @@ python -m geobeam.examples.shapefile_nfhl \
   --dataset examples \
   --table FLD_HAZ_AR
 ```
+
+## `streaming_pubsub`
+
+### Run Locally
+
+#### setup pubsub emulator
+```
+gcloud components install pubsub-emulator
+gcloud beta emulators pubsub start &
+curl -X PUT -v http://localhost:8085/v1/projects/example-project/topics/example-topic
+```
+
+#### run pipeline
+```
+PUBSUB_EMULATOR_HOST=localhost:8085 python -m geobeam.examples.streaming_pubsub \
+  --runner DirectRunner \
+  --streaming \
+  --in_proj "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"
+```
+
+#### publish messages to topic
+
+```
+curl -v \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d "@geobeam/examples/pubsub_emulator_messages.json" \
+  http://localhost:8085/v1/projects/example-project/topics/example-topic:publish
+```
+
+#### unfortunate note
+There is a bug in the pubsub emulator, or the directrunner, that garbles the
+message timestamp from the emulator. Until this is figured out, do the following:
+
+// TODO
+
