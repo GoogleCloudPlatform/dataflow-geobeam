@@ -369,7 +369,7 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        collection = fiona.open(self.file_name)
+        collection = fiona.open(file_name)
         
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
@@ -410,6 +410,7 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
 
         super(GeoJSONSource, self).__init__(file_pattern)
 
+
 class ESRIServerSource(filebasedsource.FileBasedSource):
     """A Beam FileBasedSource for reading layers from an ESRI ArcGIS Server.
 
@@ -447,7 +448,7 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        esri_dump = EsriDumper(self.file_name)
+        esri_dump = EsriDumper(file_name)
         
         geojson = {
         "type": "FeatureCollection",
@@ -492,7 +493,8 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(GeoJSONSource, self).__init__(file_pattern)
+        super(ESRIServerSource, self).__init__(file_pattern)
+
 
 class _GeoSourceUtils():
     """Utility methods for the FileBasedSource reader classes"""
