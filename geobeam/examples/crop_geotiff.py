@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Example pipeline that loads a DEM (digital elevation model) raster into
+Example pipeline that loads a cropland type raster dataset into
 Bigquery.
 """
 
