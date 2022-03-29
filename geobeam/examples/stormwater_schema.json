@@ -1,0 +1,122 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "geom",
+    "type": "GEOGRAPHY"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "UPSTREAM_STRUCTURE_1",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "PIPE_GEOMETRY",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "OWNER",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "DELETE_RECORD",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "DBASIN",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "UPSTREAM_INVERT",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "COMMENTS",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "PIPE_ID",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "CONDITION",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "PIPE_MATERIAL",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "VERTICAL_DIAMETER",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "YEAR_INSTALLED",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "DOWNSTREAM_ASSUMED_",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "MAJOR_WATERSHED",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "HORIZONTAL_DIAMETER",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "UPSTREAM_ASSUMED_",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "PIPE_SIZE",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "DOWNSTREAM_INVERT",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "DOWNSTREAM_STRUCTURE",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "OBJECTID",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "PIPE_LENGTH_FT",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "UPSTREAM_STRUCTURE",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "DOWNSTREAM_STRUCTURE_1",
+    "type": "STRING"
+  }
+]

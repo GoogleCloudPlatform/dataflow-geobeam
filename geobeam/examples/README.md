@@ -99,6 +99,7 @@ python -m geobeam.examples.geotiff_dem \
   --gcs_url gs://geobeam/examples/dem-clipped-test.tif \
   --dataset examples \
   --table dem \
+  --schema 'elev:INT64,geom:GEOGRAPHY'
   --band_column elev \
   --max_num_workers 3 \
   --machine_type c2-standard-30 \
@@ -171,4 +172,37 @@ python -m geobeam.examples.shapefile_nfhl \
   --layer_name S_FLD_HAZ_AR \
   --dataset examples \
   --table FLD_HAZ_AR
+```
+
+## `geojson_stormwater`
+
+```
+bq mk --table <dataset>.stormwater geobeam/examples/stormwater_schema.json
+```
+
+### Run Locally
+
+```
+python -m geobeam.examples.geojson_stormwater \
+  --runner DirectRunner \
+  --project <your project> \
+  --temp_location <your temp bucket> \
+  --gcs_url gs://geobeam/examples/Stormwater_Pipes.geojson \
+  --dataset examples \
+  --table stormwater \
+```
+
+### Run in Dataflow
+
+```
+python -m geobeam.examples.geojson_stormwater \
+  --runner DataflowRunner \
+  --project <your project> \
+  --temp_location <your temp bucket> \
+  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
+  --experiment use_runner_v2 \
+  --service_account_email <your service account> \
+  --gcs_url gs://geobeam/examples/Stormwater_Pipes.geojson \
+  --dataset examples \
+  --table stormwater
 ```

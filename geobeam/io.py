@@ -53,8 +53,10 @@ class GeotiffSource(filebasedsource.FileBasedSource):
             data in the same projection. Note: you will need to manually
             reproject all geometries to EPSG:4326 in order to store it in
             BigQuery.
-        in_epsg (int, optional): override the source projection of your input
-            raster in case its missing or incorrect
+        in_epsg (int, optional): override the source projection with an EPSG
+            code.
+        in_proj (str, optional): override the source projection with a
+            PROJ4 string.
         merge_blocks (int, optional): Defaults to `32`. Number of windows
             to combine during polygonization. Setting this to a larger number
             will result in fewer file reads and possible improved overall
@@ -87,8 +89,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         with self.open_file(file_name) as f, MemoryFile(f.read()) as m, m.open() as src:
-            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(
-                    src.crs, self.in_epsg)
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
 
             block_windows = list([win for ji, win in src.block_windows()])
             num_windows = len(block_windows)
@@ -148,11 +149,12 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
     def __init__(self, file_pattern, band_number=1, include_nodata=False,
                  skip_reproject=False, centroid_only=False, in_epsg=None,
-                 merge_blocks=32, **kwargs):
+                 in_proj=None, merge_blocks=32, **kwargs):
         self.include_nodata = include_nodata
         self.skip_reproject = skip_reproject
         self.centroid_only = centroid_only
         self.in_epsg = in_epsg
+        self.in_proj = in_proj
         self.band_number = band_number
 
         if merge_blocks > 10000 or merge_blocks < 1:
@@ -177,8 +179,10 @@ class ShapefileSource(filebasedsource.FileBasedSource):
             Required the zipfile contains multiple layers.
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
-        in_epsg (int, optional): override the source projection of your input
-            shapefile in case of a missing or incorrect .prj file
+        in_epsg (int, optional): override the source projection with an EPSG
+            code.
+        in_proj (str, optional): override the source projection with a
+            PROJ4 string.
 
     Yields:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
@@ -205,7 +209,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
             else:
                 collection = BytesCollection(f.read())
 
-            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
@@ -236,11 +240,12 @@ class ShapefileSource(filebasedsource.FileBasedSource):
                 next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, layer_name=None, skip_reproject=False,
-                 in_epsg=None, **kwargs):
+                 in_epsg=None, in_proj=None,**kwargs):
 
         self.layer_name = layer_name
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
+        self.in_proj = in_proj
 
         super(ShapefileSource, self).__init__(file_pattern)
 
@@ -261,8 +266,10 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             the gdb, e.g. `S_CSLF_Ar`
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
-        in_epsg (int, optional): override the source projection of your input
-            shapefile in case of a missing or incorrect CRS
+        in_epsg (int, optional): override the source projection with an EPSG
+            code.
+        in_proj (str, optional): override the source projection with a
+            PROJ4 string.
 
     Yields:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
@@ -283,7 +290,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
         with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
             collection = mem.open(self.gdb_name, layer=self.layer_name)
-            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
@@ -317,12 +324,13 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
-            in_epsg=None, skip_reproject=False, **kwargs):
+            in_epsg=None, in_proj=None, skip_reproject=False, **kwargs):
 
         self.gdb_name = gdb_name
         self.layer_name = layer_name
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
+        self.in_proj = in_proj
 
         super(GeodatabaseSource, self).__init__(file_pattern)
 
@@ -337,8 +345,10 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
     Args:
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
-        in_epsg (int, optional): override the source projection of your input
-            shapefile in case of a missing or incorrect .prj file
+        in_epsg (int, optional): override the source projection with an EPSG
+            code.
+        in_proj (str, optional): override the source projection with a
+            PROJ4 string.
 
     Yields:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
@@ -359,9 +369,9 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        collection = fiona.open(self.file_name)
+        collection = fiona.open(file_name)
         
-        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
         num_features = len(collection)
         feature_bytes = math.floor(total_bytes / num_features)
@@ -392,12 +402,14 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
             next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, skip_reproject=False,
-                 in_epsg=None, **kwargs):
+                 in_epsg=None, in_proj=None, **kwargs):
 
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
+        self.in_proj = in_proj
 
         super(GeoJSONSource, self).__init__(file_pattern)
+
 
 class ESRIServerSource(filebasedsource.FileBasedSource):
     """A Beam FileBasedSource for reading layers from an ESRI ArcGIS Server.
@@ -411,8 +423,10 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
     Args:
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
-        in_epsg (int, optional): override the source projection of your input
-            shapefile in case of a missing or incorrect .prj file
+        in_epsg (int, optional): override the source projection with an EPSG
+            code.
+        in_proj (str, optional): override the source projection with a
+            PROJ4 string.
 
     Yields:
         generator of (`props`, `geom`) tuples. `props` is a `dict` containing
@@ -434,7 +448,7 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        esri_dump = EsriDumper(self.file_name)
+        esri_dump = EsriDumper(file_name)
         
         geojson = {
         "type": "FeatureCollection",
@@ -442,7 +456,7 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
 
         collection = BytesCollection(json.dumps(geojson, indent=2).encode('utf-8'))
         
-        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
         num_features = len(collection)
         feature_bytes = math.floor(total_bytes / num_features)
@@ -473,18 +487,20 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
             next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, skip_reproject=False,
-                 in_epsg=None, **kwargs):
+                 in_epsg=None, in_proj=None, **kwargs):
 
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
+        self.in_proj = in_proj
 
-        super(GeoJSONSource, self).__init__(file_pattern)
+        super(ESRIServerSource, self).__init__(file_pattern)
+
 
 class _GeoSourceUtils():
     """Utility methods for the FileBasedSource reader classes"""
 
     @staticmethod
-    def validate_crs(_src_crs, in_epsg):
+    def validate_crs(_src_crs, in_epsg, in_proj=None):
         from fiona import crs
 
         if type(_src_crs) == dict:
@@ -495,17 +511,29 @@ class _GeoSourceUtils():
             is_wgs84 = _src_crs.to_epsg() == 4326
 
         if in_epsg is not None:
+            if in_proj is not None:
+                logging.error('--in_epsg and --in_proj cannot both be set. use one or the other.')
+                raise Exception()
+
             in_crs = crs.from_epsg(in_epsg)
 
             if bool(src_crs) is True:
-                logging.warning('manually specified CRS {} is being used instead of raster CRS {}'.format(
+                logging.warning('manually specified CRS {} is being used instead of raster CRS {}.'.format(
+                    in_crs, src_crs))
+
+            return in_crs
+
+        if in_proj is not None:
+            in_crs = crs.from_string(in_proj)
+
+            if bool(src_crs) is True:
+                logging.warning('manually specified CRS {} is being used instead of raster CRS {}.'.format(
                     in_crs, src_crs))
 
             return in_crs
 
         if bool(src_crs) is False:
-            logging.error('--in_epsg must be specified because raster CRS is empty')
+            logging.error('--in_epsg must be specified because raster CRS is empty.')
             raise Exception()
-
 
         return is_wgs84, src_crs
