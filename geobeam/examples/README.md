@@ -205,9 +205,8 @@ curl -v \
 
 #### unfortunate note
 There is a bug in the pubsub emulator, or the directrunner, that garbles the
-message timestamp from the emulator. Until this is figured out, do the following:
-
-// TODO
+message timestamp from the emulator. You may not be able to use the emulator
+for testing until this is resolved.
 
 ## `geojson_stormwater`
 
