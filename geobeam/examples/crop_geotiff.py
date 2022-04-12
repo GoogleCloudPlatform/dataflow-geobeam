@@ -17,6 +17,16 @@ Example pipeline that loads a cropland type raster dataset into
 Bigquery.
 """
 
+def elev_to_centimeters(element):
+    """
+    Convert the floating-point to store
+    as INT64 in order to support clustering on this value column (croptype).
+    """
+
+    value, geom = element
+
+    return (int(value), geom)
+
 
 def run(pipeline_args, known_args):
     """
@@ -42,6 +52,7 @@ def run(pipeline_args, known_args):
              band_number=known_args.band_number,
              centroid_only=known_args.centroid_only,
              merge_blocks=known_args.merge_blocks))
+         | 'ElevToCentimeters' >> beam.Map(elev_to_centimeters)
          | 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
