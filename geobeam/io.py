@@ -276,9 +276,8 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         all of the feature properties. `geom` is the geometry.
 
     """
-
     def read_records(self, file_name, range_tracker):
-        from fiona import transform
+        from fiona import transform, listlayers
         from fiona.io import ZipMemoryFile
         import json
 
@@ -288,8 +287,16 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         def split_points_unclaimed(stop_pos):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
+        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+
         with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
-            collection = mem.open(self.gdb_name, layer=self.layer_name)
+            try:
+                collection = mem.open(self.gdb_name, layer=self.layer_name)
+            except:
+                logging.error('Layer not found: %s' % self.layer_name)
+                self._pattern = '/dev/null'
+                return
+
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
             num_features = len(collection)
@@ -302,6 +309,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             logging.info(json.dumps({
                 'msg': 'read_records',
                 'file_name': file_name,
+                'layer_name': self.layer_name,
                 'profile': collection.profile,
                 'num_features': num_features,
                 'total_bytes': total_bytes
@@ -312,16 +320,25 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 if i >= num_features:
                     break
 
+                next_pos = next_pos + feature_bytes
+
                 cur_feature = features[i]
                 geom = cur_feature['geometry']
                 props = cur_feature['properties']
+
+                if geom is None:
+                    logging.info('Skipping null geometry: {}'.format(cur_feature))
+                    continue
+
+                if len(geom['coordinates']) == 0:
+                    logging.info('Skipping empty geometry: {}'.format(cur_feature))
+                    continue
 
                 if not self.skip_reproject:
                     geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
 
                 yield (props, geom)
 
-                next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
             in_epsg=None, in_proj=None, skip_reproject=False, **kwargs):
@@ -333,6 +350,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         self.in_proj = in_proj
 
         super(GeodatabaseSource, self).__init__(file_pattern)
+
 
 class GeoJSONSource(filebasedsource.FileBasedSource):
     """A Beam FileBasedSource for reading GeoJSON Files.
