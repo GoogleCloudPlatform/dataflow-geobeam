@@ -277,7 +277,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
     """
     def read_records(self, file_name, range_tracker):
-        from fiona import transform, listlayers
+        from fiona import transform
         from fiona.io import ZipMemoryFile
         import json
 
@@ -292,7 +292,8 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
             try:
                 collection = mem.open(self.gdb_name, layer=self.layer_name)
-            except:
+            except Exception as e:
+                logging.error(e)
                 logging.error('Layer not found: %s' % self.layer_name)
                 self._pattern = '/dev/null'
                 return

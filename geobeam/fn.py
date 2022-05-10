@@ -18,7 +18,7 @@ geometries in your pipeline
 """
 
 
-def make_valid(element):
+def make_valid(element, drop_z=True):
     """
     Attempt to make a geometry valid. Returns `None` if the geometry cannot
     be made valid.
@@ -30,13 +30,16 @@ def make_valid(element):
           | beam.Map(geobeam.fn.filter_invalid)
     """
     from shapely.geometry import shape
-    from shapely import validation
+    from shapely import validation, wkb
 
     props, geom = element
     shape_geom = shape(geom)
 
     if not shape_geom.is_valid:
         shape_geom = validation.make_valid(shape_geom)
+
+    if drop_z and shape_geom.has_z:
+        shape_geom = wkb.loads(wkb.dumps(shape_geom, output_dimension=2))
 
     if shape_geom is not None:
         return (props, shape_geom.__geo_interface__)
@@ -67,6 +70,7 @@ def filter_invalid(element):
         return False
 
     return shape(geom).is_valid
+
 
 def trim_polygons(element, d=0.0000001, cf=1.2):
     """
@@ -99,7 +103,6 @@ def trim_polygons(element, d=0.0000001, cf=1.2):
             .simplify(d)
             .__geo_interface__
     )
-
 
 
 def format_record(element, band_column=None, band_type='int'):
