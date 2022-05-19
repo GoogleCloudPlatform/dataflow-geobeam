@@ -17,7 +17,6 @@ Example pipeline that loads a cropland type raster dataset into
 Bigquery.
 """
 
-
 def run(pipeline_args, known_args):
     """
     Run the pipeline. Invoked by the Beam runner.
