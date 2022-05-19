@@ -18,7 +18,7 @@ geometries in your pipeline
 """
 
 
-def make_valid(element):
+def make_valid(element, drop_z=True):
     """
     Attempt to make a geometry valid. Returns `None` if the geometry cannot
     be made valid.
@@ -30,20 +30,24 @@ def make_valid(element):
           | beam.Map(geobeam.fn.filter_invalid)
     """
     from shapely.geometry import shape
+    from shapely import validation, wkb
 
     props, geom = element
+    shape_geom = shape(geom)
 
-    geom = shape(geom).buffer(0)
+    if not shape_geom.is_valid:
+        shape_geom = validation.make_valid(shape_geom)
 
-    if geom.is_valid:
-        return (props, geom.__geo_interface__)
+    if drop_z and shape_geom.has_z:
+        shape_geom = wkb.loads(wkb.dumps(shape_geom, output_dimension=2))
+
+    if shape_geom is not None:
+        return (props, shape_geom.__geo_interface__)
     else:
         return None
 
 
 def filter_invalid(element):
-    from shapely.geometry import shape
-
     """
     Use with fn.make_valid to filter out geometries that are invalid.
 
@@ -54,18 +58,51 @@ def filter_invalid(element):
           | beam.Map(geobeam.fn.filter_invalid)
     """
 
+    from shapely.geometry import shape
+
     if element is None:
         return False
 
     props, geom = element
+    shape_geom = shape(geom)
 
-    if len(geom['coordinates']) == 0:
-        return False
-
-    if geom is None:
+    if geom is None or shape_geom.is_empty or len(geom['coordinates']) == 0:
         return False
 
     return shape(geom).is_valid
+
+
+def trim_polygons(element, d=0.0000001, cf=1.2):
+    """
+    Remove extraneous artifacts, tails, etc. from otherwise valid polygons
+
+    Args:
+        d (float, optional): trim distance
+        cf (float, optional): corrective factor
+
+    Exmaple:
+    .. code-block:: python
+
+        p | beam.Map(geobeam.fn.trim_polygons, d=0.00001, cf=1.2
+    """
+
+    from shapely.geometry import shape
+    props, geom = element
+
+    shape_geom = shape(geom)
+
+    if shape_geom.type not in ['Polygon', 'MultiPolygon']:
+        return (props, geom)
+
+    return (
+        props,
+        shape_geom
+            .buffer(-d)
+            .buffer(d * cf)
+            .intersection(shape_geom)
+            .simplify(d)
+            .__geo_interface__
+    )
 
 
 def format_record(element, band_column=None, band_type='int'):
