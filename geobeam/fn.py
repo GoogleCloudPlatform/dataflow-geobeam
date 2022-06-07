@@ -49,7 +49,8 @@ def make_valid(element, drop_z=True):
 
 def filter_invalid(element):
     """
-    Use with fn.make_valid to filter out geometries that are invalid.
+    Use with fn.make_valid to filter out geometries that are invalid, empty,
+    or are out of bounds.
 
     Example:
     .. code-block:: python
@@ -64,12 +65,21 @@ def filter_invalid(element):
         return False
 
     props, geom = element
-    shape_geom = shape(geom)
 
-    if geom is None or shape_geom.is_empty or len(geom['coordinates']) == 0:
+    if geom is None or geom.get('coordinates') is None:
         return False
 
-    return shape(geom).is_valid
+    shape_geom = shape(geom)
+
+    if not shape_geom.is_valid or shape_geom.is_empty:
+        return False
+
+    minx, miny, maxx, maxy = shape_geom.bounds
+
+    if minx < -180 or miny < -90 or maxx > 180 or maxy > 90:
+        return False
+
+    return True
 
 
 def trim_polygons(element, d=0.0000001, cf=1.2):

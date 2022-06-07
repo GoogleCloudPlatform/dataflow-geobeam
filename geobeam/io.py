@@ -74,8 +74,9 @@ class GeotiffSource(filebasedsource.FileBasedSource):
         from rasterio.io import MemoryFile
         from rasterio.features import shapes
         from rasterio.windows import union
+        from rasterio.warp import transform_geom
         from shapely.geometry import shape
-        from fiona import transform
+        #from fiona import transform
         import json
 
         total_bytes = self.estimate_size()
@@ -135,8 +136,8 @@ class GeotiffSource(filebasedsource.FileBasedSource):
                 }, default=str))
 
                 for (g, v) in shapes(block, block_mask, transform=cur_transform):
-                    if not is_wgs84 or self.skip_reproject:
-                        geom = transform.transform_geom(src_crs, 'epsg:4326', g)
+                    if not self.skip_reproject:
+                        geom = transform_geom(src_crs, 'epsg:4326', g)
                     else:
                         geom = g
 
@@ -162,7 +163,7 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
         self.merge_blocks = merge_blocks
 
-        super(GeotiffSource, self).__init__(file_pattern)
+        super(GeotiffSource, self).__init__(file_pattern, min_bundle_size=int(1e9))
 
 
 class ShapefileSource(filebasedsource.FileBasedSource):
@@ -247,7 +248,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(ShapefileSource, self).__init__(file_pattern)
+        super(ShapefileSource, self).__init__(file_pattern, min_bundle_size=int(1e9))
 
 
 class GeodatabaseSource(filebasedsource.FileBasedSource):
@@ -350,7 +351,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(GeodatabaseSource, self).__init__(file_pattern)
+        super(GeodatabaseSource, self).__init__(file_pattern, min_bundle_size=int(1e9))
 
 
 class GeoJSONSource(filebasedsource.FileBasedSource):
