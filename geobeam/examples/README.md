@@ -22,9 +22,8 @@ python -m geobeam.examples.shapefile_parcel \
 ```
 python -m geobeam.examples.shapefile_parcel \
   --runner DataflowRunner \
-  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
-  --experiment use_runner_v2 \
-  --project=dataflow-geobeam \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --project dataflow-geobeam \
   --temp_location <your temp bucket>
   --service_account_email <your service account>
   --region us-central1
@@ -56,8 +55,7 @@ python -m geobeam.examples.geodatabase_frd \
 python -m geobeam.examples.geodatabase_frd \
   --project <your project> \
   --runner DataflowRunner \
-  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
-  --experiment use_runner_v2 \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
   --temp_location <your temp bucket> \
   --service_account_email <your service account> \
   --region us-central1 \
@@ -90,8 +88,7 @@ python -m geobeam.examples.geotiff_dem \
 ```
 python -m geobeam.examples.geotiff_dem \
   --runner DataflowRunner \
-  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
-  --experiment use_runner_v2 \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
   --project dataflow-geobeam \
   --temp_location gs://geobeam-pipeline-tmp/ \
   --service_account_email dataflow-runner@dataflow-geobeam.iam.gserviceaccount.com \
@@ -102,7 +99,7 @@ python -m geobeam.examples.geotiff_dem \
   --schema 'elev:INT64,geom:GEOGRAPHY'
   --band_column elev \
   --max_num_workers 3 \
-  --machine_type c2-standard-30 \
+  --worker_machine_type c2-standard-30 \
   --merge_blocks 80 \
   --centroid_only true \
 ```
@@ -129,13 +126,12 @@ python -m geobeam.examples.geotiff_soilgrid \
 ```
 python -m geobeam.examples.geotiff_soilgrid \
   --runner DataflowRunner \
-  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
-  --experiment use_runner_v2 \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
   --temp_location <your temp bucket> \
   --project <your project> \
   --service_account_email <your service account> \
   --region us-central1 \
-  --machine_type c2-standard-8 \
+  --worker_machine_type c2-standard-8 \
   --gcs_url gs://geobeam/examples/soilgrid-test-clipped.tif \
   --merge_blocks 20 \
   --dataset examples \
@@ -165,8 +161,7 @@ python -m geobeam.examples.shapefile_nfhl \
   --runner DataflowRunner \
   --project <your project> \
   --temp_location <your temp bucket> \
-  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
-  --experiment use_runner_v2 \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
   --service_account_email <your service account> \
   --gcs_url gs://geobeam/examples/510104_20170217.zip \
   --layer_name S_FLD_HAZ_AR \
@@ -233,8 +228,7 @@ python -m geobeam.examples.geojson_stormwater \
   --runner DataflowRunner \
   --project <your project> \
   --temp_location <your temp bucket> \
-  --worker_harness_container_image gcr.io/dataflow-geobeam/example \
-  --experiment use_runner_v2 \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
   --service_account_email <your service account> \
   --gcs_url gs://geobeam/examples/Stormwater_Pipes.geojson \
   --dataset examples \

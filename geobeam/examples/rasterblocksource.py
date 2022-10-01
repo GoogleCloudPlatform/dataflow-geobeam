@@ -13,9 +13,20 @@
 # limitations under the License.
 
 """
-Example pipeline that loads a cropland type raster dataset into
-Bigquery.
+Example pipeline that prints a geotiff (for testing)
 """
+
+def format_raster_record(element):
+    import json, numpy
+
+    data, geom = element
+
+    #print(numpy.asarray(data[0]))
+
+    return {
+        'band_1': numpy.asarray(data[0]).tolist(),
+        'geom': json.dumps(geom)
+    }
 
 
 def run(pipeline_args, known_args):
@@ -26,28 +37,27 @@ def run(pipeline_args, known_args):
     from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
     from apache_beam.options.pipeline_options import PipelineOptions
 
-    from geobeam.io import RasterPolygonSource
-    from geobeam.fn import format_record
+    from geobeam.io import RasterBlockSource
+    from geobeam.fn import format_rasterblock_record
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink'
     ] + pipeline_args)
 
     with beam.Pipeline(options=pipeline_options) as p:
-        
-        logging.info('Will be inserting column: {}'.format(known_args.band_column))
-        
         (p
-         | beam.io.Read(RasterPolygonSource(known_args.gcs_url,
-             band_number=known_args.band_number))
-         | 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
+         | beam.io.Read(RasterBlockSource(known_args.gcs_url))
+         | 'FormatRasterRecord' >> beam.Map(format_rasterblock_record)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
-                 datasetId=known_args.dataset,
-                 tableId=known_args.table),
+                 projectId='dataflow-geobeam',
+                 datasetId='examples',
+                 tableId='raster_block_test'),
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
+
+         #| 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
 
 if __name__ == '__main__':
     import logging
@@ -57,14 +67,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--gcs_url')
-    parser.add_argument('--dataset')
-    parser.add_argument('--table')
-    parser.add_argument('--band_column')
-    parser.add_argument('--band_number', type=int, default=1)
-    parser.add_argument('--skip_nodata', type=bool, default=True)
-    parser.add_argument('--centroid_only', type=bool, default=False)
-    parser.add_argument('--in_epsg', type=int, default=None)
-    parser.add_argument('--merge_blocks', type=int, default=1)
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/beam_python3.8_sdk:2.38.0
+FROM apache/beam_python3.8_sdk:2.41.0
 
 ARG WORKDIR=/pipeline
 RUN mkdir -p ${WORKDIR}
@@ -51,18 +51,15 @@ RUN wget -q https://sqlite.org/${SQLITE_YEAR}/sqlite-autoconf-${SQLITE_VERSION}.
     && make --quiet -j$(nproc) && make --quiet install \
     && cd $WORKDIR && rm -rf sqlite-autoconf-${SQLITE_VERSION}.tar.gz sqlite-autoconf-${SQLITE_VERSION}
 
-ENV PROJ_VERSION 7.2.1
+ENV PROJ_VERSION 9.1.0
 RUN wget -q https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz \
     && tar -xzf proj-${PROJ_VERSION}.tar.gz \
-    && cd proj-${PROJ_VERSION} \
-    && CFLAGS='-DPROJ_RENAME_SYMBOLS -O2' CXXFLAGS='-DPROJ_RENAME_SYMBOLS -DPROJ_INTERNAL_CPP_NAMESPACE -O2' \
-        PKG_CONFIG_PATH=/usr/local/lib/pkgconfig  \
-        ./configure \
-            --prefix=/usr/local \
-            --without-curl \
-            --disable-static \
+    && cd proj-${PROJ_VERSION} && mkdir build && cd build \
+    && CFLAGS='-DPROJ_RENAME_SYMBOLS -O2' CXXFLAGS='-DPROJ_RENAME_SYMBOLS -DPROJ_INTERNAL_CPP_NAMESPACE -O2' PKG_CONFIG_PATH=/usr/local/lib/pkgconfig  \
     && echo "building proj ${PROJ_VERSION}..." \
-    && make --quiet -j$(nproc) && make --quiet install \
+    && cmake .. \
+    && cmake --build . \
+    && cmake --build . --target install \
     && cd $WORKDIR && rm -rf proj-${PROJ_VERSION}.tar.gz proj-${PROJ_VERSION}
 
 ENV OPENJPEG_VERSION 2.3.1
@@ -75,29 +72,17 @@ RUN wget -q -O openjpeg-${OPENJPEG_VERSION}.tar.gz https://github.com/uclouvain/
     && make --quiet -j$(nproc) && make --quiet install \
     && cd $WORKDIR && rm -rf openjpeg-${OPENJPEG_VERSION}.tar.gz openjpeg-${OPENJPEG_VERSION}
 
-ENV GDAL_VERSION 3.2.1
+ENV GDAL_VERSION 3.5.2
 RUN wget -q https://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz \
-    && tar -xzf gdal-${GDAL_VERSION}.tar.gz && cd gdal-${GDAL_VERSION} \
-    && ./configure \
-          --disable-debug \
-          --prefix=/usr/local \
-          --disable-static \
-          --without-curl \
-          --without-libtool \
-          --with-geos=/usr/local \
-          --with-geotiff=internal --with-rename-internal-libgeotiff-symbols \
-          --with-hide-internal-symbols \
-          --with-libtiff=internal --with-rename-internal-libtiff-symbols \
-          --with-openjpeg=/usr/local \
-          --with-sqlite3=/usr/local \
-          --with-proj=/usr/local \
-          --with-rename-internal-libgeotiff-symbols=yes \
-          --with-rename-internal-libtiff-symbols=yes \
-          --with-threads=yes \
+    && tar -xzf gdal-${GDAL_VERSION}.tar.gz && cd gdal-${GDAL_VERSION} && mkdir build && cd build \
     && echo "building GDAL ${GDAL_VERSION}..." \
-    && make --quiet -j$(nproc) && make --quiet install \
+    && cmake .. \
+    && cmake --build . \
+    && cmake --build . --target install \
     && cd $WORKDIR && rm -rf gdal-${GDAL_VERSION}.tar.gz gdal-${GDAL_VERSION}
 
+RUN cd $WORKDIR
 RUN ldconfig
 RUN pip install --upgrade pip
-RUN pip install gdal==$GDAL_VERSION
+COPY . .
+RUN pip install .

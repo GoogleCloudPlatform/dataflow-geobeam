@@ -37,7 +37,7 @@ def run(pipeline_args, known_args):
     from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
     from apache_beam.options.pipeline_options import PipelineOptions
 
-    from geobeam.io import GeotiffSource
+    from geobeam.io import RasterBlockSource    
     from geobeam.fn import format_record
 
     pipeline_options = PipelineOptions([
@@ -46,10 +46,8 @@ def run(pipeline_args, known_args):
 
     with beam.Pipeline(options=pipeline_options) as p:
         (p
-         | beam.io.Read(GeotiffSource(known_args.gcs_url,
-             band_number=known_args.band_number,
-             centroid_only=known_args.centroid_only,
-             merge_blocks=known_args.merge_blocks))
+         | beam.io.Read(RasterBlockSource(known_args.gcs_url,
+             band_number=known_args.band_number))
          | 'ElevToCentimeters' >> beam.Map(elev_to_centimeters)
          | 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
@@ -75,9 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('--band_column')
     parser.add_argument('--band_number', type=int, default=1)
     parser.add_argument('--skip_nodata', type=bool, default=True)
-    parser.add_argument('--centroid_only', type=bool, default=False)
     parser.add_argument('--in_epsg', type=int, default=None)
-    parser.add_argument('--merge_blocks', type=int, default=1)
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)

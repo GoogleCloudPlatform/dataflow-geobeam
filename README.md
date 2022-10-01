@@ -19,7 +19,7 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 
 | **File format** | **Data type** | **Geobeam class**  |
 |:----------------|:--------------|:-------------------|
-| `tiff`         | raster        | `GeotiffSource`
+| `tiff`         | raster        | `RasterBlockSource` and `RasterPolygonSource`
 | `shp`          | vector        | `ShapefileSource`
 | `gdb`          | vector        | `GeodatabaseSource`
 | `json`         | vector        | `GeoJSONSource`
@@ -57,11 +57,11 @@ See [`geobeam/examples`](https://github.com/GoogleCloudPlatform/dataflow-geobeam
 ```
 python -m geobeam.examples.geotiff_dem \
   --gcs_url gs://geobeam/examples/dem-clipped-test.tif \
-  --dataset=examples \
-  --table=dem \
-  --band_column=elev \
-  --centroid_only=true \
-  --runner=DirectRunner \
+  --dataset examples \
+  --table dem \
+  --band_column elev \
+  --centroid_only true \
+  --runner DirectRunner \
   --temp_location <temp gs://> \
   --project <project_id>
 ```
@@ -96,7 +96,7 @@ docker build -t gcr.io/<project_id>/example
 docker push gcr.io/<project_id>/example
 
 # or build with Cloud Build
-gcloud builds submit --tag gcr.io/<project_id>/<name> --timeout=3600s --machine-type=n1-highcpu-8
+gcloud builds submit --tag gcr.io/<project_id>/<name> --timeout 3600s --worker_machine_type n1-highcpu-8
 ```
 
 #### Start the Dataflow job
@@ -112,32 +112,39 @@ gcloud builds submit --tag gcr.io/<project_id>/<name> --timeout=3600s --machine-
 # run the geotiff_soilgrid example in dataflow
 python -m geobeam.examples.geotiff_soilgrid \
   --gcs_url gs://geobeam/examples/AWCh3_M_sl1_250m_ll.tif \
-  --dataset=examples \
-  --table=soilgrid \
-  --band_column=h3 \
-  --runner=DataflowRunner \
-  --worker_harness_container_image=gcr.io/dataflow-geobeam/example \
-  --experiment=use_runner_v2 \
-  --temp_location=<temp bucket> \
+  --dataset examples \
+  --table soilgrid \
+  --band_column h3 \
+  --runner DataflowRunner \
+  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --temp_location <temp bucket> \
   --service_account_email <service account> \
   --region us-central1 \
   --max_num_workers 2 \
-  --machine_type c2-standard-30 \
+  --worker_machine_type c2-standard-30 \
   --merge_blocks 64
 ```
 
 
 ## Examples
 
-#### Polygonize Raster
+#### Read Raster as Blocks
 ```py
+def format_raster_record(element):
+  import json, numpy
+
+  band_data, geom   element
+  return {
+    'elev': numpy.assarray(band_data[0]).tolist(),
+    'geom': json.dumps(geom)
+  }
+
 def run(options):
-  from geobeam.io import GeotiffSource
-  from geobeam.fn import format_record
+  from geobeam.io import RasterBlockSource
 
   with beam.Pipeline(options) as p:
-    (p  | 'ReadRaster' >> beam.io.Read(GeotiffSource(gcs_url))
-        | 'FormatRecord' >> beam.Map(format_record, 'elev', 'float')
+    (p  | 'ReadRaster' >> beam.io.Read(RasterBlockSource(gcs_url))
+        | 'FormatRecord' >> beam.Map(format_raster_record)
         | 'WriteToBigquery' >> beam.io.WriteToBigQuery('geo.dem'))
 ```
 

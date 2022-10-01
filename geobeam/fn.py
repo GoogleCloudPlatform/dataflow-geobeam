@@ -17,7 +17,6 @@ Beam functions, transforms, and filters that can be used to process
 geometries in your pipeline
 """
 
-
 def make_valid(element, drop_z=True):
     """
     Attempt to make a geometry valid. Returns `None` if the geometry cannot
@@ -114,6 +113,49 @@ def trim_polygons(element, d=0.0000001, cf=1.2):
             .__geo_interface__
     )
 
+def format_rasterblock_record(element, band_mapping=None):
+    """
+    Format the tuple received from a RasterBlockSource into a
+    record that can be inserted into BigQuery or another database.
+
+    Args:
+        band_mapping (dict, optional): a band number to band name
+        mapping used to name the output columns. band numbers are
+        1-indexed, meaning they begin at 1 (by GDAL convention)
+
+    Example:
+
+    .. code-block:: python
+
+        from geobeam.fn import format_rasterblock_record
+        band_mapping = {
+            1: 'elevation',
+            4: 'red',
+            5: 'green'
+        }
+        p | beam.Map(format_rasterblock_record, band_mapping=band_mapping)
+    """
+
+    from shapely.geometry import shape
+
+    data, geom = element
+    record = { }
+
+    if band_mapping is None:
+        for bidx in range(0, len(data)):
+            band_data = data[bidx].tolist()
+            record['band_{}'.format(bidx + 1)] = band_data
+    else:
+        for band in band_mapping:
+            bidx = band - 1
+            band_data = data[bidx].tolist()
+            record[band_mapping[band]] = band_data
+
+    return {
+        **record,
+        'geom': shape(geom).wkt
+    }
+
 
 def format_record(element, band_column=None, band_type='int'):
     """
@@ -136,7 +178,7 @@ def format_record(element, band_column=None, band_type='int'):
         p | beam.Map(geobeam.fn.format_record,
             band_column='elev', band_type=float)
     """
-    import json
+    from shapely.geometry import shape
 
     props, geom = element
     cast = eval(band_type)
@@ -144,10 +186,10 @@ def format_record(element, band_column=None, band_type='int'):
     if band_column and band_type:
         return {
             band_column: cast(props),
-            'geom': json.dumps(geom)
+            'geom': shape(geom).wkt
         }
     else:
         return {
             **props,
-            'geom': json.dumps(geom)
+            'geom': shape(geom).wkt
         }

@@ -24,28 +24,25 @@ from apache_beam.io import iobase
 from apache_beam.io import filebasedsource
 
 
-class GeotiffSource(filebasedsource.FileBasedSource):
-    """A Beam FileBasedSource for reading Geotiff files.
+class RasterBlockSource(filebasedsource.FileBasedSource):
+    """A Beam FileBasedSource for reading pixel blocks from raster files in
+    equally-sized blocks.
 
-    The Geotiff is read in blocks and each block is polygonized. Each polygon
-    is returned as a (`value`, `geom`) tuple, where `value` is the band value
-    of the polygonized pixels, and `geom` is the Polygon (or Point if
-    centroid_only is True) geometry that corresponds to the `value`. The raster
-    is stored in RAM, so make sure you specify a machine_type with enough RAM
-    to hold the entire raster image.
+    The raster file is read in MxN blocks, and each band is read as a MxN
+    array. M and N are determined by the input raster file and are not
+    runtime configurable.
 
-        p | beam.io.Read(GeotiffSource(file_pattern))
+    `RasterBlockSource` optimizes for pipeline speed, and is best for ELT
+    processes where further processing can be done by the sink (e.g.
+    BigQuery).
+
+        p | beam.io.Read(RasterBlockSource(file_pattern))
           | beam.Map(print)
 
     Args:
         file_pattern (str): required, passed to FileBasedSource.
-        band_number (int, optional): Defaults to `1`. the band(s) to read from
+        bidx (int[], optional): Defaults to `1`. The band indexes to read from
             the raster.
-        include_nodata (bool, optional): Defaults to `False`. False to ignore
-            nodata values in the raster band; True to include them.
-        centroid_only (bool, optional): Defaults to `False`. True to set geom
-            to the centroid Point, False to include the entire Polygon. Do not
-            use with the merge_blocks option.
         skip_reproject (bool, optional): Defaults to `False`. True to return
             `geom` in its original projection.
             This can be useful if your data is in a bespoke CRS that requires a
@@ -57,39 +54,28 @@ class GeotiffSource(filebasedsource.FileBasedSource):
             code.
         in_proj (str, optional): override the source projection with a
             PROJ4 string.
-        merge_blocks (int, optional): Defaults to `32`. Number of windows
-            to combine during polygonization. Setting this to a larger number
-            will result in fewer file reads and possible improved overall
-            performance. Setting this value too high (>100) may cause file
-            read issues and worker timeouts. Set to a smaller number if your
-            raster blocks are large (256x256 or larger).
 
     Yields:
-        generator of (`value`, `geom`) tuples. The data type of `value` is
-        determined by the raster band it came from.
-
+        generator of (`value`, `geom`) tuples. `value` is a 3D
+        array; the first dimension is the band index, and the remaining two
+        dimensions represent the pixel values for the band.
     """
 
     def read_records(self, file_name, range_tracker):
-        from rasterio.io import MemoryFile
-        from rasterio.features import shapes
-        from rasterio.windows import union
-        from rasterio.warp import transform_geom
-        from shapely.geometry import shape
-        #from fiona import transform
+        import rasterio
+        from fiona.transform import transform_geom
         import json
 
         total_bytes = self.estimate_size()
 
         next_pos = range_tracker.start_position()
-        end_pos = range_tracker.stop_position()
 
         def split_points_unclaimed(stop_pos):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        with self.open_file(file_name) as f, MemoryFile(f.read()) as m, m.open() as src:
+        with rasterio.open(file_name) as src:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
 
             block_windows = list([win for ji, win in src.block_windows()])
@@ -99,71 +85,167 @@ class GeotiffSource(filebasedsource.FileBasedSource):
 
             logging.info(json.dumps({
                 'msg': 'read_records',
+                'next_pos': next_pos,
+                'file_name': file_name,
+                'file_size_mb': round(total_bytes / 1048576),
+                'src_profile': src.profile,
+                'total_bytes': total_bytes,
+                'window_bytes': window_bytes,
+                'num_windows': num_windows
+            }, default=str))
+
+            while range_tracker.try_claim(next_pos):
+                i = math.ceil(next_pos / window_bytes)
+                if i >= num_windows:
+                    break
+
+                win = block_windows[i]
+
+                logging.info(json.dumps({
+                    'msg': 'read_records.try_claim',
+                    'file_name': file_name,
+                    'next_pos': next_pos,
+                    'i': i,
+                    'window': win
+                }, default=str))
+
+                xfrm = src.window_transform(win)
+
+                exterior_ring = [
+                    xfrm * (0, 0),
+                    xfrm * (0, -win.height),
+                    xfrm * (win.width, -win.height),
+                    xfrm * (win.width, 0),
+                    xfrm * (0, 0)
+                ]
+                geom_obj = {
+                    'type': 'Polygon',
+                    'coordinates': [ exterior_ring ]
+                }
+
+                if self.skip_reproject:
+                    geom = geom_obj
+                else:
+                    geom = transform_geom(src_crs, 'epsg:4326', geom_obj)
+
+                if self.bidx:
+                    block = src.read(self.bidx, window=win)
+                else:
+                    block = src.read(window=win)
+
+                yield (block, geom)
+
+                next_pos = next_pos + window_bytes
+
+
+    def __init__(self, file_pattern, bidx=None, in_epsg=None, in_proj=None,
+                 skip_reproject=False, **kwargs):
+        self.in_epsg = in_epsg
+        self.in_proj = in_proj
+        self.bidx = bidx
+        self.skip_reproject = skip_reproject
+
+        super(RasterBlockSource, self).__init__(file_pattern)
+
+class RasterPolygonSource(filebasedsource.FileBasedSource):
+    """A Beam FileBasedSource for reading pixels grouped by value from raster
+    files.
+
+    The raster file is read in blocks and each block is polygonized. Each
+    polygon is returned as a (`value`, `geom`) tuple, where `value` is the band
+    value of the polygonized pixels, and `geom` is the Polygon (or Point if
+    centroid_only is True) geometry that corresponds to the `value`.
+
+    `RasterPolygonSource` optimizes for immediate usability of the output, and so
+    is most suitable for ETL processes; it will be slower than RasterBlockSource,
+    produce more rows of output, and can only read one band at a time.
+
+        p | beam.io.Read(RasterPolygonSource(file_pattern))
+          | beam.Map(print)
+
+    Args:
+        file_pattern (str): required, passed to FileBasedSource.
+        bidx (int, optional): Defaults to `1`. The band index to read from
+            the raster.
+        skip_reproject (bool, optional): Defaults to `False`. True to return
+            `geom` in its original projection.
+            This can be useful if your data is in a bespoke CRS that requires a
+            custom reprojection, or if you want to join/clip with other spatial
+            data in the same projection. Note: you will need to manually
+            reproject all geometries to EPSG:4326 in order to store it in
+            BigQuery.
+        in_epsg (int, optional): override the source projection with an EPSG
+            code.
+        in_proj (str, optional): override the source projection with a
+            PROJ4 string.
+
+    Yields:
+        generator of (`value`, `geom`) tuples. The data type of `value` is
+        determined by the raster band it came from.
+    """
+
+    def read_records(self, file_name, range_tracker):
+        import rasterio
+        from rasterio.features import shapes
+        from fiona.transform import transform_geom
+        import json
+
+        total_bytes = self.estimate_size()
+
+        next_pos = range_tracker.start_position()
+
+        def split_points_unclaimed(stop_pos):
+            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+
+        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+
+        with rasterio.open(file_name) as src:
+            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
+
+            block_windows = list([win for ji, win in src.block_windows()])
+            num_windows = len(block_windows)
+            window_bytes = math.floor(total_bytes / num_windows)
+            i = 0
+
+            logging.info(json.dumps({
+                'msg': 'read_records',
+                'next_pos': next_pos,
                 'file_name': file_name,
                 'file_size_mb': round(total_bytes / 1048576),
                 'block_windows': num_windows,
-                'merge_blocks': self.merge_blocks,
-                'include_nodata': self.include_nodata,
                 'src_profile': src.profile
             }, default=str))
 
             while range_tracker.try_claim(next_pos):
                 i = math.ceil(next_pos / window_bytes)
-                end_i = math.floor(end_pos / window_bytes)
                 if i >= num_windows:
                     break
 
-                actual_merge_blocks = max(1, min(self.merge_blocks, end_i - i))
+                win = block_windows[i]
+                block = src.read(self.bidx, window=win)
+                block_mask = src.read_masks(self.bidx, window=win)
+                xfm = src.window_transform(win)
 
-                slice_end = min(i + actual_merge_blocks, num_windows)
-                window_slice = block_windows[i:slice_end]
-                cur_window = union(window_slice)
-                cur_transform = src.window_transform(cur_window)
-                block_mask = src.read_masks(self.band_number, window=cur_window)
-
-                if self.include_nodata:
-                    block = src.read(self.band_number, window=cur_window)
-                else:
-                    block = src.read(self.band_number, window=cur_window, masked=True)
-
-                logging.debug(json.dumps({
+                logging.info(json.dumps({
                     'msg': 'read_records.try_claim',
                     'file_name': file_name,
-                    'band_number': self.band_number,
-                    'next_pos': next_pos,
+                    'bidx': self.bidx,
                     'i': i,
-                    'window': cur_window
+                    'window': win
                 }, default=str))
 
-                for (g, v) in shapes(block, block_mask, transform=cur_transform):
-                    if not self.skip_reproject:
-                        geom = transform_geom(src_crs, 'epsg:4326', g)
-                    else:
-                        geom = g
-
-                    if self.centroid_only:
-                        geom = shape(geom).centroid.__geo_interface__
-
+                for (g, v) in shapes(block, block_mask, transform=xfm):
+                    geom = transform_geom(src_crs, 'epsg:4326', g)
                     yield (v, geom)
 
-                next_pos = next_pos + (window_bytes * actual_merge_blocks)
+                next_pos = next_pos + window_bytes
 
-    def __init__(self, file_pattern, band_number=1, include_nodata=False,
-                 skip_reproject=False, centroid_only=False, in_epsg=None,
-                 in_proj=None, merge_blocks=32, **kwargs):
-        self.include_nodata = include_nodata
-        self.skip_reproject = skip_reproject
-        self.centroid_only = centroid_only
+    def __init__(self, file_pattern, bidx=1, in_epsg=None, in_proj=None, **kwargs):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
-        self.band_number = band_number
+        self.bidx = bidx
 
-        if merge_blocks > 10000 or merge_blocks < 1:
-            raise Exception('merge_blocks option must be 1 >= x < 10000')
-
-        self.merge_blocks = merge_blocks
-
-        super(GeotiffSource, self).__init__(file_pattern, min_bundle_size=int(1e9))
+        super(RasterPolygonSource, self).__init__(file_pattern)
 
 
 class ShapefileSource(filebasedsource.FileBasedSource):
@@ -218,6 +300,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
 
             logging.info(json.dumps({
                 'msg': 'read_records',
+                'next_pos': next_pos,
                 'file_name': file_name,
                 'profile': collection.profile,
                 'num_features': num_features,
@@ -278,9 +361,11 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
     """
     def read_records(self, file_name, range_tracker):
+        import fiona
         from fiona import transform
-        from fiona.io import ZipMemoryFile
         import json
+
+        fiona_path = 'zip+{}/{}'.format(file_name, self.gdb_name)
 
         total_bytes = self.estimate_size()
         next_pos = range_tracker.start_position()
@@ -290,26 +375,16 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
-        with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
-            try:
-                collection = mem.open(self.gdb_name, layer=self.layer_name)
-            except Exception as e:
-                logging.error(e)
-                logging.error('Layer not found: %s' % self.layer_name)
-                self._pattern = '/dev/null'
-                return
-
+        with fiona.open(fiona_path, layer=self.layer_name) as collection:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
             i = 0
 
-            # XXX workaround due to https://github.com/Toblerity/Fiona/issues/996
-            features = list(collection)
-
             logging.info(json.dumps({
                 'msg': 'read_records',
+                'next_pos': next_pos,
                 'file_name': file_name,
                 'layer_name': self.layer_name,
                 'profile': collection.profile,
@@ -324,22 +399,24 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
                 next_pos = next_pos + feature_bytes
 
-                cur_feature = features[i]
+                cur_feature = collection[i]
+                if cur_feature is None:
+                    continue
+
                 geom = cur_feature['geometry']
-                props = cur_feature['properties']
 
                 if geom is None:
                     logging.info('Skipping null geometry: {}'.format(cur_feature))
                     continue
 
-                if len(geom['coordinates']) == 0:
+                if not geom['coordinates']:
                     logging.info('Skipping empty geometry: {}'.format(cur_feature))
                     continue
 
-                if not self.skip_reproject:
+                if not self.skip_reproject and not is_wgs84:
                     geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
 
-                yield (props, geom)
+                yield (cur_feature['properties'], geom)
 
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
@@ -390,7 +467,6 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         collection = fiona.open(file_name)
-        
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
         num_features = len(collection)
@@ -469,13 +545,12 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         esri_dump = EsriDumper(file_name)
-        
+
         geojson = {
         "type": "FeatureCollection",
         "features": list(esri_dump) }
 
         collection = BytesCollection(json.dumps(geojson, indent=2).encode('utf-8'))
-        
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
         num_features = len(collection)

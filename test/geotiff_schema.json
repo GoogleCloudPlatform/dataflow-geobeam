@@ -1,0 +1,10 @@
+[
+  {
+    "name": "band_1",
+    "type": "JSON"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY"
+  }
+]

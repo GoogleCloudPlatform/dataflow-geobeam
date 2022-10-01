@@ -33,24 +33,6 @@ steps:
       - --destination=gcr.io/dataflow-geobeam/base:$_VERSION
       - --cache=true
 
-  # build examples image for Python 3.7
-  #- name: gcr.io/kaniko-project/executor
-  #  id: example-py37
-  #  args:
-  #    - --dockerfile=geobeam/examples/Dockerfile.py37
-  #    - --destination=gcr.io/dataflow-geobeam/example-py37:$_VERSION
-  #    - --cache=true
-  #  waitFor: ['base']
-
-   # build examples image for Python 3.8+
-  - name: gcr.io/kaniko-project/executor
-    id: example
-    args:
-      - --dockerfile=geobeam/examples/Dockerfile
-      - --destination=gcr.io/dataflow-geobeam/example:$_VERSION
-      - --cache=true
-    waitFor: ['base']
-
   - name: gcr.io/dataflow-geobeam/base:$_VERSION
     waitFor: ['base']
     entrypoint: 'bash'
@@ -90,7 +72,7 @@ steps:
         terraform init
         terraform apply --auto-approve
 
-  - name: gcr.io/dataflow-geobeam/example
+  - name: gcr.io/dataflow-geobeam/base
     id: test_shapefile
     entrypoint: 'python'
     args: [
@@ -98,6 +80,19 @@ steps:
       '--gcs_url', 'gs://geobeam/examples/ghent-parcels-shp.zip',
       '--dataset', 'examples',
       '--table', 'parcel',
+      '--runner', 'DirectRunner',
+      '--temp_location', 'gs://geobeam-pipeline-tmp/',
+      '--project', 'dataflow-geobeam'
+    ]
+
+  - name: gcr.io/dataflow-geobeam/base
+    id: test_rasterblocksource
+    entrypoint: 'python'
+    args: [
+      '-m', 'geobeam.examples.rasterblocksource',
+      '--gcs_url', 'gs://geobeam/examples/examplefloodscore.tif',
+      '--dataset', 'examples',
+      '--table', 'rasterblock_test',
       '--runner', 'DirectRunner',
       '--temp_location', 'gs://geobeam-pipeline-tmp/',
       '--project', 'dataflow-geobeam'

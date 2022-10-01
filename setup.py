@@ -20,12 +20,12 @@ from distutils.core import setup
 import geobeam
 
 REQUIRED_PACKAGES = [
-    'apache_beam[gcp]==2.38.0',
+    'apache_beam[gcp]==2.41.0',
     'fiona==1.8.21',
-    'shapely==1.8.2',
-    'rasterio==1.2.10',
-    'google-cloud-storage==2.2.0',
-    'esridump==1.10.1'
+    'shapely==1.8.4',
+    'rasterio==1.3.2',
+    'google-cloud-storage==2.5.0',
+    'esridump==1.11.0'
 ]
 
 
@@ -46,7 +46,7 @@ setup(
     long_description_content_type='text/markdown',
     keywords='beam dataflow gdal gis',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: GIS',
@@ -55,5 +55,5 @@ setup(
     ],
     install_requires=REQUIRED_PACKAGES,
     packages=setuptools.find_packages(),
-    python_requires='>=3.7'
+    python_requires='>=3.8'
 )

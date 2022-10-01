@@ -16,6 +16,25 @@
 Example pipeline that loads a county parcel shape dataset into BigQuery.
 """
 
+def orient_polygon(element):
+    from shapely.geometry import shape, polygon, MultiPolygon
+
+    props, geom = element
+    geom_shape = shape(geom)
+
+    if geom_shape.geom_type == 'Polygon':
+        oriented_geom = polygon.orient(geom_shape)
+        return props, oriented_geom
+
+    if geom_shape.geom_type == 'MultiPolygon':
+        pgons = []
+        for pgon in geom_shape.geoms:
+            pgons.append(polygon.orient(pgon))
+            oriented_mpgon = MultiPolygon(pgons)
+        return props, oriented_mpgon
+
+    return props, geom
+
 
 def typecast_fields(record):
     return {
@@ -43,8 +62,9 @@ def run(pipeline_args, known_args):
         (p
          | beam.io.Read(ShapefileSource(known_args.gcs_url,
              layer_name=known_args.layer_name))
-         | 'MakeValid' >> beam.Map(make_valid)
-         | 'FilterInvalid' >> beam.Filter(filter_invalid)
+         | 'OrientPolygon' >> beam.Map(orient_polygon)
+         #| 'MakeValid' >> beam.Map(make_valid)
+         #| 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'FormatRecords' >> beam.Map(format_record)
          | 'TypecastRecords' >> beam.Map(typecast_fields)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(

@@ -1,2 +1,5 @@
 *.egg*
 *terraform.*
+*.terraform*
+*.tif
+*.git
