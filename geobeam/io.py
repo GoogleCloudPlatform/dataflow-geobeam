@@ -375,6 +375,17 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
+        gdb_layers = fiona.listlayers(fiona_path)
+        if self.layer_name and self.layer_name not in gdb_layers:
+            logging.warning(json.dumps({
+                'msg': 'gdb_layer_not_found',
+                'layer_name': self.layer_name,
+                'gdb_name': self.gdb_name,
+                'gdb_layers': gdb_layers
+            }))
+            self._pattern = '/dev/null'
+            return
+
         with fiona.open(fiona_path, layer=self.layer_name) as collection:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
 
