@@ -210,6 +210,8 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 | `layer_name`       | Vector  | Name of layer to read | | Yes, for shapefiles
 | `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | | Yes, for GDB files
 
+The merge_blocks parameter affects how Geobeam reads the data. During the read process, Geobeam groups pixels that have the same values over a particular area. By increasing the value number of merge_blocks, you decrease that area, which affects how Geobeam merges the pixels. You can use this parameter to tune the ingestion time — generally, increasing the merge_blocks value increases the ingestion time. Increasing the merge_blocks value also affects the number of rows (i.e, POINTs, POLYGONs, etc) that are output by the ingestion job. In [this example](https://github.com/remylouisew/communitygee/tree/master/tutorials/earthengine-to-bigquery), decreasing the merge_blocks value below 10 led to significantly fewer POINTs being output. Increasing merge_blocks above 10 also decreased the number of POINTs, though less drastically. 
+
 
 ## License
 
