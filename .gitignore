@@ -11,3 +11,4 @@ build/bdist*
 *.pdf
 docs.md
 build/
+*.zip
