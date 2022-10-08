@@ -16,16 +16,6 @@ substitutions:
   _VERSION: 'latest'
 
 steps:
-  # build base image for python 3.7
-  # - name: gcr.io/kaniko-project/executor
-  #   id: base-py37
-  #   args:
-  #     - --dockerfile=Dockerfile.py37
-  #     - --destination=gcr.io/dataflow-geobeam/base-py37:$_VERSION
-  #     - --cache=true
-  #       #
-  # build base image for python 3.8+
-  #
   - name: gcr.io/kaniko-project/executor
     id: base
     args:

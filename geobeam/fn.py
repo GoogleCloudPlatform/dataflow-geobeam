@@ -17,6 +17,7 @@ Beam functions, transforms, and filters that can be used to process
 geometries in your pipeline
 """
 
+
 def make_valid(element, drop_z=True):
     """
     Attempt to make a geometry valid. Returns `None` if the geometry cannot
@@ -113,6 +114,7 @@ def trim_polygons(element, d=0.0000001, cf=1.2):
             .__geo_interface__
     )
 
+
 def format_rasterblock_record(element, band_mapping=None):
     """
     Format the tuple received from a RasterBlockSource into a
@@ -139,7 +141,7 @@ def format_rasterblock_record(element, band_mapping=None):
     from shapely.geometry import shape
 
     data, geom = element
-    record = { }
+    record = {}
 
     if band_mapping is None:
         for bidx in range(0, len(data)):
@@ -157,39 +159,58 @@ def format_rasterblock_record(element, band_mapping=None):
     }
 
 
-def format_record(element, band_column=None, band_type='int'):
-    """
-    Format the tuple received from the geobeam file source into a record
-    that can be inserted into BigQuery. If using a raster source, the
-    bands and band_column will be combined.
+def format_rasterpolygon_record(element, band_type='int', band_column=None):
+    """Format the tuple received from the geobeam raster source into a record
+    that can be inserted into BigQuery or another database.
 
     Args:
-        band_column (str, optional): the name of the raster band column
         band_type (str, optional): Default to int. The data type of the
             raster band column to store in the database.
+        band_column (str, optional): the name of the raster band column
 
     Example:
     .. code-block:: python
 
-        # vector
-        p | beam.Map(geobeam.fn.format_record)
-
-        # raster
-        p | beam.Map(geobeam.fn.format_record,
-            band_column='elev', band_type=float)
+        beam.Map(geobeam.fn.format_record, band_column='elev', band_type=float)
     """
     from shapely.geometry import shape
 
     props, geom = element
     cast = eval(band_type)
 
-    if band_column and band_type:
-        return {
-            band_column: cast(props),
-            'geom': shape(geom).wkt
-        }
-    else:
-        return {
-            **props,
-            'geom': shape(geom).wkt
-        }
+    return {
+        band_column: cast(props),
+        'geom': shape(geom).wkt
+    }
+
+
+def format_record(element, output_type='wkt'):
+    """Format the tuple received from the geobeam file source into a record
+    that can be inserted into BigQuery or another database.
+
+    Args:
+        output_type (bool, optional): Default to 'wkt'. Set to 'geojson'
+        to store as geojson string.  'geojson' can be useful if you need to run
+        each value through st_geogfromgeojson() with make_valid=>true
+        in a create table statement.
+
+    Example:
+    .. code-block:: python
+
+        # vector
+        p | beam.Map(geobeam.fn.format_record)
+    """
+    from shapely.geometry import shape
+    import json
+
+    props, geom = element
+
+    if output_type == 'wkt':
+        output_geom = shape(geom).wkt
+    if output_type == 'geojson':
+        output_geom = json.dumps(geom)
+
+    return {
+        **props,
+        'geom': output_geom
+    }
