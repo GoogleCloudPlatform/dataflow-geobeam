@@ -22,7 +22,7 @@ ENV CCACHE_DISABLE=1
 ENV PATH=$PATH:$WORKDIR/build/usr/local/bin
 
 RUN apt-get update -y \
-    && apt-get install libffi-dev git g++ make cmake automake pkg-config -y \
+    && apt-get install libffi-dev g++ cmake automake pkg-config -y \
     && apt-get clean
 
 ENV CURL_VERSION 7.73.0
