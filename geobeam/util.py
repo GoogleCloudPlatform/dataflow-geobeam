@@ -65,14 +65,16 @@ def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
 
     bq_schema = []
 
-    if layer_name is None:
-        profile = fiona.open(filepath).profile
-    elif gdb_name is None:
-        profile = fiona.open(filepath, layer=layer_name).profile
-    else:
+    if filepath.endswith('.zip') and layer_name is None:
+        profile = fiona.open('zip://' + filepath).profile
+    elif filepath.endswith('.zip'):
+        profile = fiona.open('zip://' + filepath, layer=layer_name).profile
+    elif gdb_name is not None:
         f = open(filepath, 'rb')
         mem = ZipMemoryFile(f.read())
         profile = mem.open(gdb_name, layer=layer_name).profile
+    else:
+        profile = fiona.open(filepath, layer=layer_name).profile
 
     for field_name, field_type in profile['schema']['properties'].items():
         fiona_type = prop_type(field_type)
@@ -85,8 +87,7 @@ def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
     bq_schema.append({
         'name': 'geom',
         'type': 'GEOGRAPHY',
-        'description': '{} reprojected from {}. source: {}'.format(
-            profile['schema']['geometry'], profile['crs']['init'], profile['driver'])
+        'description': '{} loaded from {}'.format(profile['schema']['geometry'], profile['driver'])
     })
 
     return bq_schema
@@ -104,10 +105,11 @@ def get_bigquery_schema_dataflow(filepath, layer_name=None, gdb_name=None):
         layer_name (str, optional): name of the layer, if file contains
             multiple layers
     Returns:
-        JSON: the schema in JSON that can be passed to the schema argument in WriteToBigQuery. Must use the parse_table_schema_from_json() from apache_beam.io.gcp.bigquery_tools
+        JSON: the schema in JSON that can be passed to the schema argument in WriteToBigQuery.
+        Must use the parse_table_schema_from_json() from apache_beam.io.gcp.bigquery_tools
     """
 
-    from google.cloud import storage 
+    from google.cloud import storage
     import fiona
     import json
     from fiona import BytesCollection
