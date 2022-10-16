@@ -81,6 +81,9 @@ RUN wget -q https://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}
     && cmake --build . --target install \
     && cd $WORKDIR && rm -rf gdal-${GDAL_VERSION}.tar.gz gdal-${GDAL_VERSION}
 
+RUN apt-get remove g++ cmake automake pkg-config -y \
+  && apt-get clean
+
 RUN cd $WORKDIR
 RUN ldconfig
 RUN pip install --upgrade pip

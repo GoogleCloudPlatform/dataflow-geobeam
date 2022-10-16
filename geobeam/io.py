@@ -331,7 +331,7 @@ class ShapefileSource(filebasedsource.FileBasedSource):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(ShapefileSource, self).__init__(file_pattern, min_bundle_size=int(1e9))
+        super(ShapefileSource, self).__init__(file_pattern)
 
 
 class GeodatabaseSource(filebasedsource.FileBasedSource):
@@ -439,7 +439,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(GeodatabaseSource, self).__init__(file_pattern, min_bundle_size=int(1e9))
+        super(GeodatabaseSource, self).__init__(file_pattern)
 
 
 class GeoJSONSource(filebasedsource.FileBasedSource):
