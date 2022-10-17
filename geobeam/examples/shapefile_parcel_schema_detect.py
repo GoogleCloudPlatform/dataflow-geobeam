@@ -115,9 +115,7 @@ def get_schema(known_args):
     bq_schema.append({
         'name': 'geom',
         'type': 'GEOGRAPHY',
-        'description': '{} reprojected from {}. source: {}'.format(
-            profile['schema']['geometry'], profile['crs']['init'], profile['driver'])
-    })
+           })
     
     return json.JSONEncoder(sort_keys=True).encode(bq_schema)
 
