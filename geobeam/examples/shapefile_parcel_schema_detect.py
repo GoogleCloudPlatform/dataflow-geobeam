@@ -142,7 +142,7 @@ def run(pipeline_args, known_args):
              schema=get_schema(known_args),
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
-             create_disposition=beam.io.BigQueryDisposition.CREATE_IFNEEDED))
+             create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
 
 
 if __name__ == '__main__':
