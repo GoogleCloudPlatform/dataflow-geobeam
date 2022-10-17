@@ -73,7 +73,7 @@ def get_schema(known_args):
     data = blob.download_as_string()
     
     profile = None
-    layer_name= None
+    layer_name= known_args.layer_name
 
     if layer_name is not None:
         with fiona.io.ZipMemoryFile(data) as zip:
