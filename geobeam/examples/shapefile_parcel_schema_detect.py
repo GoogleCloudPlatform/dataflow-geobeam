@@ -124,7 +124,8 @@ def create_table(known_args):
     client = bigquery.Client()
 
     # TODO(developer): Set table_id to the ID of the table to create.
-    table_id = format(known_args.project, known_args.dataset, known_args.table)
+    #table_id = format(known_args.project, known_args.dataset, known_args.table)
+    table_id=f"{known_args.project}.{known_args.dataset}.{known_args.table}"
 
     bigquerySchema = []
 
