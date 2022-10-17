@@ -30,6 +30,7 @@ import fiona
 import json
 from fiona import BytesCollection
 
+'''
 def orient_polygon(element):
     from shapely.geometry import shape, polygon, MultiPolygon
 
@@ -50,11 +51,14 @@ def orient_polygon(element):
     return props, geom
 
 
+
 def typecast_fields(record):
     return {
         **record,
         'LRSN': str(record['LRSN'])
     }
+
+'''
     
 def get_schema(known_args):
 
@@ -130,11 +134,9 @@ def run(pipeline_args, known_args):
         (p
          | beam.io.Read(ShapefileSource(known_args.gcs_url,
              layer_name=known_args.layer_name))
-         | 'OrientPolygon' >> beam.Map(orient_polygon)
-         #| 'MakeValid' >> beam.Map(make_valid)
-         #| 'FilterInvalid' >> beam.Filter(filter_invalid)
+         | 'MakeValid' >> beam.Map(make_valid)
+         | 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'FormatRecords' >> beam.Map(format_record)
-         | 'TypecastRecords' >> beam.Map(typecast_fields)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
@@ -143,6 +145,7 @@ def run(pipeline_args, known_args):
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
+             
 
 
 if __name__ == '__main__':
