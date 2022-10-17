@@ -18,7 +18,6 @@ Example pipeline that loads a county parcel shape dataset into BigQuery.
 
 import apache_beam as beam
 from google.cloud import bigquery
-from google.api_core.exceptions import NotFound
 import geobeam
 from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
 from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
@@ -128,23 +127,24 @@ def create_table(known_args):
     #table_id = format(known_args.project, known_args.dataset, known_args.table)
     table_id=f"{known_args.project}.{known_args.dataset}.{known_args.table}"
     
-    if not exists(table_id):
-        raise NotFoundException("Table does not exist")
-
-    table_ref = client.dataset(dataset_id).table(table_id)
     try:
-        client.delete_table(table_ref)
+        client.get_table(table_id)  # Make an API request.
+        print("Table {} already exists.".format(table_id))
     except NotFound:
-            # Ignore 404 error which may occur if table already deleted
-        table = client.delete_table(table_id)
-        bigquerySchema = []
-        bigqueryColumns = json.loads(schema_json)
-        for col in bigqueryColumns:
-            bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
-            table = bigquery.Table(table_id, schema=bigquerySchema)
-            table = client.create_table(table)  # Make an API request.
-    except http_error as ex:
-        process_http_error(ex) 
+         print("Table {} is not found.".format(table_id))
+         table = client.delete_table(table_id)
+    
+    bigquerySchema = []
+
+    bigqueryColumns = json.loads(schema_json)
+    for col in bigqueryColumns:
+        bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
+
+    table = bigquery.Table(table_id, schema=bigquerySchema)
+    table = client.create_table(table)  # Make an API request.
+    print(
+        "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
+    )
 
 
 def run(pipeline_args, known_args):
