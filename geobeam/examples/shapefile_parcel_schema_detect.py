@@ -117,7 +117,7 @@ def get_schema(known_args):
         'type': 'GEOGRAPHY',
            })
     
-    return json.JSONEncoder(sort_keys=True).encode({"field": bq_schema})
+    return json.JSONEncoder(sort_keys=True).encode({"fields": bq_schema})
     #return bq_schema
 
 
