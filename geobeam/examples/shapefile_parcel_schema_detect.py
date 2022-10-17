@@ -117,8 +117,8 @@ def get_schema(known_args):
         'type': 'GEOGRAPHY',
            })
     
-    #return json.JSONEncoder(sort_keys=True).encode(bq_schema)
-    return bq_schema
+    return json.JSONEncoder(sort_keys=True).encode(bq_schema)
+    #return bq_schema
 
 
 def run(pipeline_args, known_args):
