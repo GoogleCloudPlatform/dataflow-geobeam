@@ -18,6 +18,7 @@ Example pipeline that loads a county parcel shape dataset into BigQuery.
 
 import apache_beam as beam
 from google.cloud import bigquery
+from google.cloud.exceptions import NotFound
 import geobeam
 from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
 from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
