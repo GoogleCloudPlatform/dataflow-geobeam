@@ -92,9 +92,9 @@ def get_schema(known_args):
     from fiona import prop_type
 
     BQ_FIELD_TYPES = {
-        'int': 'INT64',
+        'int': 'INTEGER',
         'str': 'STRING',
-        'float': 'FLOAT64',
+        'float': 'FLOAT',
         'bool': 'BOOL',
         'date': 'DATE',
         'time': 'TIME',
@@ -119,7 +119,7 @@ def get_schema(known_args):
             profile['schema']['geometry'], profile['crs']['init'], profile['driver'])
     })
     
-#return json.JSONEncoder(sort_keys=True).encode({"fields": bq_schema})
+    return json.JSONEncoder(sort_keys=True).encode({"fields": bq_schema})
 
 
 def run(pipeline_args, known_args):
