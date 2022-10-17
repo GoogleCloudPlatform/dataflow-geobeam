@@ -139,7 +139,8 @@ def run(pipeline_args, known_args):
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
                  tableId=known_args.table),
-             schema=get_schema(known_args),
+             #schema=get_schema(known_args),
+             schema='SCHEMA_AUTODETECT',
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
