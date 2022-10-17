@@ -128,12 +128,12 @@ def create_table(known_args):
     #table_id = format(known_args.project, known_args.dataset, known_args.table)
     table_id=f"{known_args.project}.{known_args.dataset}.{known_args.table}"
     
-    if not self.exists(table_id):
+    if not exists(table_id):
         raise NotFoundException("Table does not exist")
 
-    table_ref = self.client.dataset(self.dataset_id).table(table_id)
+    table_ref = client.dataset(dataset_id).table(table_id)
     try:
-        self.client.delete_table(table_ref)
+        client.delete_table(table_ref)
     except NotFound:
             # Ignore 404 error which may occur if table already deleted
         table = client.delete_table(table_id)
@@ -143,8 +143,8 @@ def create_table(known_args):
             bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
             table = bigquery.Table(table_id, schema=bigquerySchema)
             table = client.create_table(table)  # Make an API request.
-    except self.http_error as ex:
-        self.process_http_error(ex) 
+    except http_error as ex:
+        process_http_error(ex) 
 
 
 def run(pipeline_args, known_args):
