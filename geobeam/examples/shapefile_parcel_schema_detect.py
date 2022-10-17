@@ -133,7 +133,7 @@ def run(pipeline_args, known_args):
         (p
          | beam.io.Read(ShapefileSource(known_args.gcs_url,
              layer_name=known_args.layer_name))
-         | 'MakeValid' >> beam.Map(make_valid)
+         #| 'MakeValid' >> beam.Map(make_valid)
          | 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'FormatRecords' >> beam.Map(format_record)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
