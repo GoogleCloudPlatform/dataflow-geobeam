@@ -60,7 +60,7 @@ def typecast_fields(record):
     }
 
 '''
-    
+
 def create_table(known_args):
 
     
@@ -134,6 +134,7 @@ def create_table(known_args):
         bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
 
     table = bigquery.Table(table_id, schema=bigquerySchema)
+    table = client.delete_table(table)
     table = client.create_table(table)  # Make an API request.
     print(
         "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
