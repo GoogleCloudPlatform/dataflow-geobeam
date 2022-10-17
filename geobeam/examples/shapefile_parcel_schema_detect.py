@@ -81,7 +81,7 @@ def get_schema(known_args):
 
     if layer_name is not None:
         with fiona.io.ZipMemoryFile(data) as zip:
-            with zip.open(f'{zip_name}.shp') as collection:
+            with zip.open(f'{zip_name}.shp',layer_name) as collection:
                 print(collection)
                 profile = collection.profile
     elif layer_name is not None:
@@ -119,7 +119,7 @@ def get_schema(known_args):
             profile['schema']['geometry'], profile['crs']['init'], profile['driver'])
     })
     
-    return json.JSONEncoder(sort_keys=True).encode({"fields": bq_schema})
+    return json.JSONEncoder(sort_keys=True).encode(bq_schema)
 
 
 def run(pipeline_args, known_args):
