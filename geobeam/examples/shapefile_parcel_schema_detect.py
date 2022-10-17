@@ -16,6 +16,20 @@
 Example pipeline that loads a county parcel shape dataset into BigQuery.
 """
 
+import apache_beam as beam
+import geobeam
+from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
+from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
+from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+from geobeam.io import ShapefileSource
+from geobeam.fn import format_record, make_valid, filter_invalid
+from geobeam.util import get_bigquery_schema_dataflow,get_bigquery_schema
+
+from google.cloud import storage
+import fiona
+import json
+from fiona import BytesCollection
+
 def orient_polygon(element):
     from shapely.geometry import shape, polygon, MultiPolygon
 
@@ -107,13 +121,6 @@ def run(pipeline_args, known_args):
     """
     Invoked by the Beam runner
     """
-
-    import apache_beam as beam
-    from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
-    from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
-    from geobeam.io import ShapefileSource
-    from geobeam.fn import format_record, make_valid, filter_invalid
-
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink',
     ] + pipeline_args)
