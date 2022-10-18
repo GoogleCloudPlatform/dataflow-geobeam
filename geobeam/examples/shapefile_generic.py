@@ -118,9 +118,8 @@ def create_table(known_args,pipeline_args):
     
     #TODO: FIX THE DAMNED PROJECT ID 
     
-    beam_options = PipelineOptions(pipeline_args)
-    options = list(beam_options.display_data().values())
-    table_id=f"{options}.{known_args.dataset}.{known_args.table}"
+    options = list(PipelineOptions(pipeline_args).display_data().values())
+    table_id=f"{options[1]}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
