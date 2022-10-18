@@ -16,10 +16,11 @@
 Example pipeline that loads a county parcel shape dataset into BigQuery.
 """
 
-
+'''
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 from google.cloud import storage
+'''
 
 import apache_beam as beam
 from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
@@ -29,12 +30,13 @@ from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 import geobeam
 from geobeam.io import ShapefileSource
 from geobeam.fn import format_record, make_valid, filter_invalid
+from geobeam.util import create_table_from_shp
 
-
+'''
 import fiona
 from fiona import BytesCollection
 import json
-
+'''
 
 
 #function to orient polygons correctly (based on the linestrings)
@@ -57,6 +59,7 @@ def orient_polygon(element):
 
     return props, geom
 
+'''
 #function read shapefile based on the layer submitted, derive schema and create BQ table if doesn't exist
 #beam.io.WriteToBigQuery in run function for some reason struggles with the standard json schema definitions like {"NAME":"TYPE"} (sends it with escaped " and BQ isn't happy about it)
 
@@ -138,7 +141,7 @@ def create_table(known_args,pipeline_args):
             print(
                 "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
                 )    
- 
+'''
 #Primary run function
 def run(pipeline_args, known_args):
     """
@@ -180,5 +183,5 @@ if __name__ == '__main__':
     parser.add_argument('--in_epsg', type=int, default=None)
     known_args, pipeline_args = parser.parse_known_args()
 
-    create_table(known_args,pipeline_args)
+    create_table_from_shp(known_args,pipeline_args)
     run(pipeline_args, known_args)
