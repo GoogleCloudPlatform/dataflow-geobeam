@@ -189,5 +189,5 @@ if __name__ == '__main__':
     parser.add_argument('--in_epsg', type=int, default=None)
     known_args, pipeline_args = parser.parse_known_args()
 
-    create_table(known_args)
+    create_table(known_args,pipeline_args)
     run(pipeline_args, known_args)
