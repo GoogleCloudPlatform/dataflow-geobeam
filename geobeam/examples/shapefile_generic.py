@@ -173,7 +173,7 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project_id')
+    parser.add_argument('--project')
     parser.add_argument('--gcs_url')
     parser.add_argument('--dataset')
     parser.add_argument('--table')
