@@ -52,7 +52,7 @@ def orient_polygon(element):
     return props, geom
 
 
-def create_table(known_args):
+def create_table(known_args,pipeline_args):
 
     gcs_url = known_args.gcs_url
     bucket_name = gcs_url.split('/')[2]
@@ -117,7 +117,7 @@ def create_table(known_args):
     #project_id = "vadimzaripov-477-2022062208552"
     
     #TODO: FIX THE DAMNED PROJECT ID 
-    table_id=f"{known_args.project}.{known_args.dataset}.{known_args.table}"
+    table_id=f"{pipeline_args.project}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
@@ -181,5 +181,5 @@ if __name__ == '__main__':
     parser.add_argument('--in_epsg', type=int, default=None)
     known_args, pipeline_args = parser.parse_known_args()
 
-    create_table(known_args)
+    create_table(known_args,pipeline_args)
     run(pipeline_args, known_args)
