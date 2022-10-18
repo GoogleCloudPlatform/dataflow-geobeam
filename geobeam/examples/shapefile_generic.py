@@ -23,7 +23,7 @@ from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 
 #import geobeam
 from geobeam.fn import format_record, make_valid, filter_invalid
-from ..util import create_table_from_shp
+from ...geobeam.util import create_table_from_shp
 
 
 #function to orient polygons correctly (based on the linestrings)
