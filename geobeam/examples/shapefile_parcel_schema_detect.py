@@ -32,7 +32,7 @@ import fiona
 import json
 from fiona import BytesCollection
 
-'''
+
 def orient_polygon(element):
     from shapely.geometry import shape, polygon, MultiPolygon
 
@@ -53,7 +53,7 @@ def orient_polygon(element):
     return props, geom
 
 
-
+'''
 def typecast_fields(record):
     return {
         **record,
@@ -165,6 +165,7 @@ def run(pipeline_args, known_args):
              layer_name=known_args.layer_name))
          | 'MakeValid' >> beam.Map(make_valid)
          | 'FilterInvalid' >> beam.Filter(filter_invalid)
+         | 'OrientPolygon' >> beam.Map(orient_polygon)
          | 'FormatRecords' >> beam.Map(format_record)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
