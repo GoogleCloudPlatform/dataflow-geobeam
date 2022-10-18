@@ -82,7 +82,7 @@ def create_table(known_args):
 
     if layer_name is not None:
         with fiona.io.ZipMemoryFile(data) as zip:
-            with zip.open(f'{zip_name}.shp',layer_name) as collection:
+            with zip.open(f'{zip_name}.shp',layer=layer_name) as collection:
                 print(collection)
                 profile = collection.profile
     elif layer_name is not None:
