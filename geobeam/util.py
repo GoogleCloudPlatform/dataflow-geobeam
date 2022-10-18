@@ -183,8 +183,7 @@ def create_table_from_shp(known_args,pipeline_args):
     from google.cloud import bigquery
     from google.cloud.exceptions import NotFound
     from google.cloud import storage
-    
-    from geobeam.io import ShapefileSource
+
     from apache_beam.options.pipeline_options import PipelineOptions
 
 

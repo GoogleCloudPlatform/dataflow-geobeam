@@ -20,6 +20,7 @@ import apache_beam as beam
 from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
 from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+from geobeam.io import ShapefileSource
 
 #import geobeam
 from geobeam.fn import format_record, make_valid, filter_invalid
