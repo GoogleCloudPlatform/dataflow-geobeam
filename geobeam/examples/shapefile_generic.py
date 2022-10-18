@@ -25,7 +25,6 @@ from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
 from geobeam.io import ShapefileSource
 from geobeam.fn import format_record, make_valid, filter_invalid
-from geobeam.util import get_bigquery_schema_dataflow,get_bigquery_schema
 
 from google.cloud import storage
 import fiona
@@ -52,15 +51,6 @@ def orient_polygon(element):
 
     return props, geom
 
-
-'''
-def typecast_fields(record):
-    return {
-        **record,
-        'LRSN': str(record['LRSN'])
-    }
-
-'''
 
 def create_table(known_args):
 
@@ -120,15 +110,14 @@ def create_table(known_args):
     
     schema_json = json.JSONEncoder(sort_keys=True).encode(bq_schema)
 
-    # Construct a BigQuery client object.
     client = bigquery.Client()
 
     # TODO(developer): Set table_id to the ID of the table to create.
     #table_id = format(known_args.project, known_args.dataset, known_args.table)
-    project_id = "vadimzaripov-477-2022062208552"
+    #project_id = "vadimzaripov-477-2022062208552"
     
     #TODO: FIX THE DAMNED PROJECT ID 
-    table_id=f"{project_id}.{known_args.dataset}.{known_args.table}"
+    table_id=f"{known_args.project_id}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
@@ -184,7 +173,7 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser()
-    #parser.add_argument('--project')
+    parser.add_argument('--project_id')
     parser.add_argument('--gcs_url')
     parser.add_argument('--dataset')
     parser.add_argument('--table')
