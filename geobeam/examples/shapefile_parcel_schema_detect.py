@@ -62,7 +62,7 @@ def typecast_fields(record):
 
 '''
 
-def create_table(known_args):
+def create_table(known_args,pipeline_args):
 
     
     gcs_url = known_args.gcs_url
@@ -126,7 +126,7 @@ def create_table(known_args):
 
     # TODO(developer): Set table_id to the ID of the table to create.
     #table_id = format(known_args.project, known_args.dataset, known_args.table)
-    table_id=f"{known_args.project}.{known_args.dataset}.{known_args.table}"
+    table_id=f"{pipeline_args.project}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
