@@ -16,23 +16,29 @@
 Example pipeline that loads a county parcel shape dataset into BigQuery.
 """
 
-import apache_beam as beam
+
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
-import geobeam
+from google.cloud import storage
+
+import apache_beam as beam
 from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
 from apache_beam.io.gcp.bigquery_tools import parse_table_schema_from_json
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions
+
+import geobeam
 from geobeam.io import ShapefileSource
 from geobeam.fn import format_record, make_valid, filter_invalid
 
-from google.cloud import storage
+
 import fiona
-import json
 from fiona import BytesCollection
+import json
 
 
-def orient_polygon(element):
+
+#function to orient polygons correctly (based on the linestrings)
+def orient_polygon(element): 
     from shapely.geometry import shape, polygon, MultiPolygon
 
     props, geom = element
@@ -51,8 +57,10 @@ def orient_polygon(element):
 
     return props, geom
 
+#function read shapefile based on the layer submitted, derive schema and create BQ table if doesn't exist
+#beam.io.WriteToBigQuery in run function for some reason struggles with the standard json schema definitions like {"NAME":"TYPE"} (sends it with escaped " and BQ isn't happy about it)
 
-def create_table(known_args,pipeline_args):
+def create_table(known_args,pipeline_args): 
 
     gcs_url = known_args.gcs_url
     bucket_name = gcs_url.split('/')[2]
@@ -111,37 +119,27 @@ def create_table(known_args,pipeline_args):
     schema_json = json.JSONEncoder(sort_keys=True).encode(bq_schema)
 
     client = bigquery.Client()
-
-    # TODO(developer): Set table_id to the ID of the table to create.
-    #table_id = format(known_args.project, known_args.dataset, known_args.table)
-    #project_id = "vadimzaripov-477-2022062208552"
-    
-    #TODO: FIX THE DAMNED PROJECT ID 
-    
-    options = list(PipelineOptions(pipeline_args).display_data().values())
+   
+    options = list(PipelineOptions(pipeline_args).display_data().values()) #impoassible to acquire project from known_args, had to be creative with PipelineOptions
     table_id=f"{options[1]}.{known_args.dataset}.{known_args.table}"
     
     try:
-        client.get_table(table_id)  # Make an API request.
+        client.get_table(table_id)  
         print("Table {} already exists.".format(table_id))
-        table = client.delete_table(table_id)
+        #table = client.delete_table(table_id) #We are using WRITE_TRUNCATE in BigQuery, so no need to delete, if exists
     except NotFound:
-         print("Table {} is not found.".format(table_id))
-         
-    
-    bigquerySchema = []
-
-    bigqueryColumns = json.loads(schema_json)
-    for col in bigqueryColumns:
-        bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
-
-    table = bigquery.Table(table_id, schema=bigquerySchema)
-    table = client.create_table(table)  # Make an API request.
-    print(
-        "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
-    )
-
-
+         print("Table {} is not found. Creating.".format(table_id))
+         bigquerySchema = []
+         bigqueryColumns = json.loads(schema_json)
+         for col in bigqueryColumns:
+            bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
+            table = bigquery.Table(table_id, schema=bigquerySchema)
+            table = client.create_table(table)  # Make an API request.
+            print(
+                "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
+                )    
+ 
+#Primary run function
 def run(pipeline_args, known_args):
     """
     Invoked by the Beam runner
@@ -175,7 +173,6 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser()
-    #parser.add_argument('--project')
     parser.add_argument('--gcs_url')
     parser.add_argument('--dataset')
     parser.add_argument('--table')
