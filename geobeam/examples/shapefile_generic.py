@@ -117,7 +117,7 @@ def create_table(known_args):
     #project_id = "vadimzaripov-477-2022062208552"
     
     #TODO: FIX THE DAMNED PROJECT ID 
-    table_id=f"{known_args.project_id}.{known_args.dataset}.{known_args.table}"
+    table_id=f"{known_args.project}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
