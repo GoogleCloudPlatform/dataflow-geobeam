@@ -161,7 +161,7 @@ def run(pipeline_args, known_args):
         (p
          | beam.io.Read(ShapefileSource(known_args.gcs_url,
              layer_name=known_args.layer_name))
-         #| 'MakeValid' >> beam.Map(make_valid)
+         | 'MakeValid' >> beam.Map(make_valid)
          | 'FilterInvalid' >> beam.Filter(filter_invalid)
          | 'FormatRecords' >> beam.Map(format_record)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--project', type=str, default=None)
+    #parser.add_argument('--project')
     parser.add_argument('--gcs_url')
     parser.add_argument('--dataset')
     parser.add_argument('--table')
