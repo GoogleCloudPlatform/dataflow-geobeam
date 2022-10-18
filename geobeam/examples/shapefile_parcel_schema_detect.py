@@ -64,6 +64,7 @@ def typecast_fields(record):
 
 def create_table(known_args,pipeline_args):
 
+    gcp_args = pipeline_args.view_as(GoogleCloudOptions)
     
     gcs_url = known_args.gcs_url
     bucket_name = gcs_url.split('/')[2]
@@ -126,7 +127,7 @@ def create_table(known_args,pipeline_args):
 
     # TODO(developer): Set table_id to the ID of the table to create.
     #table_id = format(known_args.project, known_args.dataset, known_args.table)
-    table_id=f"{pipeline_args.project}.{known_args.dataset}.{known_args.table}"
+    table_id=f"{gcp_args.project}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
