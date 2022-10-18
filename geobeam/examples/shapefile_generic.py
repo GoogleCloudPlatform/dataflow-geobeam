@@ -118,7 +118,7 @@ def create_table(known_args):
     
     #TODO: FIX THE DAMNED PROJECT ID 
     
-    known_args_ext = known_args.extend([
+    known_args_ext = known_args_extend([
         '--project=' + known_args.project
     ])
     
