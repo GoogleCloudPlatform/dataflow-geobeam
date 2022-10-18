@@ -118,11 +118,8 @@ def create_table(known_args):
     
     #TODO: FIX THE DAMNED PROJECT ID 
     
-    known_args_ext = known_args_extend([
-        '--project=' + known_args.project
-    ])
     
-    table_id=f"{known_args_ext.project}.{known_args.dataset}.{known_args.table}"
+    table_id=f"{known_args.projectid}.{known_args.dataset}.{known_args.table}"
     
     try:
         client.get_table(table_id)  # Make an API request.
