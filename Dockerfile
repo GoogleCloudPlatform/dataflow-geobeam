@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/beam_python3.8_sdk:2.41.0
+### Changelog ###
+#10.2022 - Dockerfile versions bump to core beam sdk 3.9:2.41 and latest versions of libs (to be ran in GCP Console with Dataflow runner)
+#Use with cloudbuild like:
+#gcloud builds submit --tag gcr.io/[project]]/geobeam-3.9-base --timeout 3600s --machine-type n2-highcpu-16
+
+FROM apache/beam_python3.9_sdk:2.41.0
 
 ARG WORKDIR=/pipeline
 RUN mkdir -p ${WORKDIR}
@@ -22,18 +27,18 @@ ENV CCACHE_DISABLE=1
 ENV PATH=$PATH:$WORKDIR/build/usr/local/bin
 
 RUN apt-get update -y \
-    && apt-get install libffi-dev g++ cmake automake pkg-config -y \
+    && apt-get install libffi-dev git g++ make cmake automake pkg-config -y \
     && apt-get clean
 
-ENV CURL_VERSION 7.73.0
+ENV CURL_VERSION 7.85.0
 RUN wget -q https://curl.haxx.se/download/curl-${CURL_VERSION}.tar.gz \
     && tar -xzf curl-${CURL_VERSION}.tar.gz && cd curl-${CURL_VERSION} \
-    && ./configure --prefix=/usr/local \
+    && ./configure --prefix=/usr/local --without-ssl \
     && echo "building CURL ${CURL_VERSION}..." \
     && make --quiet -j$(nproc) && make --quiet install \
     && cd $WORKDIR && rm -rf curl-${CURL_VERSION}.tar.gz curl-${CURL_VERSION}
 
-ENV GEOS_VERSION 3.9.0
+ENV GEOS_VERSION 3.11.0
 RUN wget -q https://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
     && tar -xjf geos-${GEOS_VERSION}.tar.bz2  \
     && cd geos-${GEOS_VERSION} \
@@ -42,8 +47,8 @@ RUN wget -q https://download.osgeo.org/geos/geos-${GEOS_VERSION}.tar.bz2 \
     && make --quiet -j$(nproc) && make --quiet install \
     && cd $WORKDIR && rm -rf geos-${GEOS_VERSION}.tar.bz2 geos-${GEOS_VERSION}
 
-ENV SQLITE_VERSION 3330000
-ENV SQLITE_YEAR 2020
+ENV SQLITE_VERSION 3390400
+ENV SQLITE_YEAR 2022
 RUN wget -q https://sqlite.org/${SQLITE_YEAR}/sqlite-autoconf-${SQLITE_VERSION}.tar.gz \
     && tar -xzf sqlite-autoconf-${SQLITE_VERSION}.tar.gz && cd sqlite-autoconf-${SQLITE_VERSION} \
     && ./configure --prefix=/usr/local \
@@ -62,7 +67,7 @@ RUN wget -q https://download.osgeo.org/proj/proj-${PROJ_VERSION}.tar.gz \
     && cmake --build . --target install \
     && cd $WORKDIR && rm -rf proj-${PROJ_VERSION}.tar.gz proj-${PROJ_VERSION}
 
-ENV OPENJPEG_VERSION 2.3.1
+ENV OPENJPEG_VERSION 2.5.0
 RUN wget -q -O openjpeg-${OPENJPEG_VERSION}.tar.gz https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz \
     && tar -zxf openjpeg-${OPENJPEG_VERSION}.tar.gz \
     && cd openjpeg-${OPENJPEG_VERSION} \
@@ -80,9 +85,6 @@ RUN wget -q https://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}
     && cmake --build . \
     && cmake --build . --target install \
     && cd $WORKDIR && rm -rf gdal-${GDAL_VERSION}.tar.gz gdal-${GDAL_VERSION}
-
-RUN apt-get remove g++ cmake automake pkg-config -y \
-  && apt-get clean
 
 RUN cd $WORKDIR
 RUN ldconfig
