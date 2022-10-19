@@ -1,9 +1,9 @@
 python -m shapefile_generic \ 
 --runner DataflowRunner \  
---sdk_container_image gcr.io/vadimzaripov-477-2022062208552/geobeam-example \
---temp_location gs://vz-geobeam-pipeline-tmp/tmp \
+--sdk_container_image "gcr.io/vadimzaripov-477-2022062208552/geobeam-example" \
+--temp_location "gs://vz-geobeam-pipeline-tmp/tmp" \
 --service_account_email geobeam@vadimzaripov-477-2022062208552.iam.gserviceaccount.com \
---project vadimzaripov-477-2022062208552 \
+--project "vadimzaripov-477-2022062208552" \
 --region us-central1 \   
 --gcs_url "gs://exp_bucket_vz/World Heritage Sites.zip" \
 --layer_name WorldHeritageSites_20Aug2021 \
