@@ -245,7 +245,7 @@ def create_table_from_shp(known_args,pipeline_args):
 
     client = bigquery.Client()
    
-    options = list(PipelineOptions(pipeline_args).display_data().values()) #impoassible to acquire project from known_args, had to be creative with PipelineOptions
+    options = list(PipelineOptions(pipeline_args).display_data().values()) #impossible to acquire project from known_args, had to be creative with PipelineOptions
     table_id=f"{options[1]}.{known_args.dataset}.{known_args.table}"
     
     try:
@@ -259,7 +259,7 @@ def create_table_from_shp(known_args,pipeline_args):
          for col in bigqueryColumns:
             bigquerySchema.append(bigquery.SchemaField(col['name'], col['type']))
             table = bigquery.Table(table_id, schema=bigquerySchema)
-            table = client.create_table(table)  # Make an API request.
+            table = client.create_table(table) 
             print(
                 "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
                 )    
