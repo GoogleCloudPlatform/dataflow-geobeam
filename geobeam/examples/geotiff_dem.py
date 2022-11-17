@@ -29,7 +29,6 @@ def elev_to_centimeters(element):
     for i in range(0, len(band_data)):
         for j in range(0, len(band_data[i])):
             band_data[i][j] = int(band_data[i][j] * 100)
-            print(band_data[i][j])
 
     return band_data, geom
 
