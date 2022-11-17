@@ -13,21 +13,8 @@
 # limitations under the License.
 
 """
-Example pipeline that prints a geotiff (for testing)
+Example pipeline loads a geotiff (for testing)
 """
-
-def format_raster_record(element):
-    import json, numpy
-
-    data, geom = element
-
-    #print(numpy.asarray(data[0]))
-
-    return {
-        'band_1': numpy.asarray(data[0]).tolist(),
-        'geom': json.dumps(geom)
-    }
-
 
 def run(pipeline_args, known_args):
     """
@@ -56,8 +43,6 @@ def run(pipeline_args, known_args):
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
-
-         #| 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
 
 if __name__ == '__main__':
     import logging

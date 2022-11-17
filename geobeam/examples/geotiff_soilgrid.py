@@ -27,8 +27,8 @@ def run(pipeline_args, known_args):
     from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
     from apache_beam.options.pipeline_options import PipelineOptions
 
-    import geobeam.fn
-    from geobeam.io import GeotiffSource
+    from geobeam.fn import format_rasterpolygon_record
+    from geobeam.io import RasterPolygonSource
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink'
@@ -36,13 +36,8 @@ def run(pipeline_args, known_args):
 
     with beam.Pipeline(options=pipeline_options) as p:
         (p
-         | beam.io.Read(GeotiffSource(known_args.gcs_url,
-             band_number=known_args.band_number,
-             merge_blocks=known_args.merge_blocks))
-         | 'MakeValid' >> beam.Map(geobeam.fn.make_valid)
-         | 'FilterInvalid' >> beam.Filter(geobeam.fn.filter_invalid)
-         | 'FormatRecords' >> beam.Map(geobeam.fn.format_record,
-             known_args.band_column, known_args.band_type)
+         | beam.io.Read(RasterPolygonSource(known_args.gcs_url, bidx=1))
+         | 'FormatRecords' >> beam.Map(format_rasterpolygon_record, band_column=known_args.band_column)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
@@ -63,9 +58,6 @@ if __name__ == '__main__':
     parser.add_argument('--dataset')
     parser.add_argument('--table')
     parser.add_argument('--band_column', default='value')
-    parser.add_argument('--band_number', type=int, default=1)
-    parser.add_argument('--band_type', type=str, default='int')
-    parser.add_argument('--merge_blocks', type=int, default=1)
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)

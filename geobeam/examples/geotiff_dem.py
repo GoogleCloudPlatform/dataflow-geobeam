@@ -14,7 +14,7 @@
 
 """
 Example pipeline that loads a DEM (digital elevation model) raster into
-Bigquery.
+Bigquery using the BlockSource method.
 """
 
 
@@ -24,9 +24,14 @@ def elev_to_centimeters(element):
     as INT64 in order to support clustering on this value column (elev).
     """
 
-    value, geom = element
+    band_data, geom = element
 
-    return (int(value * 100), geom)
+    for i in range(0, len(band_data)):
+        for j in range(0, len(band_data[i])):
+            band_data[i][j] = int(band_data[i][j] * 100)
+            print(band_data[i][j])
+
+    return band_data, geom
 
 
 def run(pipeline_args, known_args):
@@ -37,8 +42,8 @@ def run(pipeline_args, known_args):
     from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
     from apache_beam.options.pipeline_options import PipelineOptions
 
-    from geobeam.io import RasterBlockSource    
-    from geobeam.fn import format_record
+    from geobeam.io import RasterBlockSource
+    from geobeam.fn import format_rasterblock_record
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink'
@@ -46,10 +51,9 @@ def run(pipeline_args, known_args):
 
     with beam.Pipeline(options=pipeline_options) as p:
         (p
-         | beam.io.Read(RasterBlockSource(known_args.gcs_url,
-             band_number=known_args.band_number))
+         | beam.io.Read(RasterBlockSource(known_args.gcs_url, bidx=1))
          | 'ElevToCentimeters' >> beam.Map(elev_to_centimeters)
-         | 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
+         | 'FormatRecords' >> beam.Map(format_rasterblock_record, {1: 'elev'})
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
@@ -58,6 +62,7 @@ def run(pipeline_args, known_args):
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
+
 
 if __name__ == '__main__':
     import logging
@@ -70,10 +75,6 @@ if __name__ == '__main__':
     parser.add_argument('--dataset')
     parser.add_argument('--table')
     parser.add_argument('--schema')
-    parser.add_argument('--band_column')
-    parser.add_argument('--band_number', type=int, default=1)
-    parser.add_argument('--skip_nodata', type=bool, default=True)
-    parser.add_argument('--in_epsg', type=int, default=None)
     known_args, pipeline_args = parser.parse_known_args()
 
     run(pipeline_args, known_args)
