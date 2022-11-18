@@ -17,6 +17,7 @@ Example pipeline that loads a cropland type raster dataset into
 Bigquery.
 """
 
+
 def run(pipeline_args, known_args):
     """
     Run the pipeline. Invoked by the Beam runner.
@@ -26,20 +27,20 @@ def run(pipeline_args, known_args):
     from apache_beam.options.pipeline_options import PipelineOptions
 
     from geobeam.io import RasterPolygonSource
-    from geobeam.fn import format_record
+    from geobeam.fn import format_rasterpolygon_record
 
     pipeline_options = PipelineOptions([
         '--experiments', 'use_beam_bq_sink'
     ] + pipeline_args)
 
     with beam.Pipeline(options=pipeline_options) as p:
-        
+
         logging.info('Will be inserting column: {}'.format(known_args.band_column))
-        
+
         (p
-         | beam.io.Read(RasterPolygonSource(known_args.gcs_url,
-             band_number=known_args.band_number))
-         | 'FormatRecords' >> beam.Map(format_record, known_args.band_column, 'int')
+         | beam.io.Read(RasterPolygonSource(known_args.gcs_url, bidx=known_args.band_number))
+         | 'FormatRecords' >> beam.Map(format_rasterpolygon_record, band_type='int',
+            band_column=known_args.band_column)
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  datasetId=known_args.dataset,
