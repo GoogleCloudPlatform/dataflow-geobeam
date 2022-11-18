@@ -1,4 +1,4 @@
-# Copyright 2021 Google LLC
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Changelog ###
+#10.2022 - VZ - Version bump in sync with base dockerfile 
+
 from __future__ import absolute_import
 
 import setuptools
@@ -20,9 +23,9 @@ from distutils.core import setup
 import geobeam
 
 REQUIRED_PACKAGES = [
-    'apache_beam[gcp]==2.41.0',
-    'fiona==1.8.21',
-    'shapely==1.8.4',
+    'apache_beam[gcp]==2.42.0',
+    'fiona==1.8.22',
+    'shapely==1.8.5.post1',
     'rasterio==1.3.2',
     'google-cloud-storage==2.5.0',
     'esridump==1.11.0'

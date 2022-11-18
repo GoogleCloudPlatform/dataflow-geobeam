@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/dataflow-geobeam/base
+### Changelog ###
+#10.2022 - Dockerfile versions bump to core beam sdk 3.9:2.41 and latest versions of libs (to be ran in GCP Console with Dataflow runner)
+#Use with cloudbuild like:
+#gcloud builds submit --tag gcr.io/[project]]/geobeam-example --timeout 3600s --machine-type n2-highcpu-16
 
-COPY geobeam/examples/requirements.txt ./requirements.txt
+FROM gcr.io/vadimzaripov-477-2022062208552/geobeam-base
+
+COPY requirements.txt ./requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
