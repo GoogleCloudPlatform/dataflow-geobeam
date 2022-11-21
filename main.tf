@@ -23,7 +23,7 @@ module "bigquery" {
       table_id = "parcel"
       schema = "geobeam/examples/parcel_schema.json"
       time_partitioning = null
-      clustering = ["geom", "TAX_ACCT"]
+      clustering = ["geom"]
       expiration_time = null
       labels = null
     },
@@ -31,7 +31,7 @@ module "bigquery" {
       table_id = "dem"
       schema = "geobeam/examples/dem_schema.json"
       time_partitioning = null
-      clustering = ["geom", "elev"]
+      clustering = ["geom"]
       expiration_time = null
       labels = null
     },
@@ -39,7 +39,7 @@ module "bigquery" {
       table_id = "soilgrid"
       schema = "geobeam/examples/soilgrid_schema.json"
       time_partitioning = null
-      clustering = ["geom", "h3"]
+      clustering = ["geom"]
       expiration_time = null
       labels = null
     },

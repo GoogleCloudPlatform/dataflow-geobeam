@@ -138,6 +138,7 @@ def format_rasterblock_record(element, band_mapping=None):
         p | beam.Map(format_rasterblock_record, band_mapping=band_mapping)
     """
 
+    import json
     from shapely.geometry import shape
 
     data, geom = element
@@ -155,7 +156,7 @@ def format_rasterblock_record(element, band_mapping=None):
 
     return {
         **record,
-        'geom': shape(geom).wkt
+        'geom': json.dumps(shape(geom).__geo_interface__)
     }
 
 
@@ -173,6 +174,7 @@ def format_rasterpolygon_record(element, band_type='int', band_column=None):
 
         beam.Map(geobeam.fn.format_record, band_column='elev', band_type=float)
     """
+    import json
     from shapely.geometry import shape
 
     props, geom = element
@@ -180,19 +182,13 @@ def format_rasterpolygon_record(element, band_type='int', band_column=None):
 
     return {
         band_column: cast(props),
-        'geom': shape(geom).wkt
+        'geom': json.dumps(shape(geom).__geo_interface__)
     }
 
 
-def format_record(element, output_type='wkt'):
+def format_record(element):
     """Format the tuple received from the geobeam file source into a record
     that can be inserted into BigQuery or another database.
-
-    Args:
-        output_type (bool, optional): Default to 'wkt'. Set to 'geojson'
-        to store as geojson string.  'geojson' can be useful if you need to run
-        each value through st_geogfromgeojson() with make_valid=>true
-        in a create table statement.
 
     Example:
     .. code-block:: python
@@ -200,17 +196,11 @@ def format_record(element, output_type='wkt'):
         # vector
         p | beam.Map(geobeam.fn.format_record)
     """
-    from shapely.geometry import shape
     import json
 
     props, geom = element
 
-    if output_type == 'wkt':
-        output_geom = shape(geom).wkt
-    if output_type == 'geojson':
-        output_geom = json.dumps(geom)
-
     return {
         **props,
-        'geom': output_geom
+        'geom': json.dumps(geom)
     }
