@@ -89,11 +89,11 @@ COPY . .
 
 ```bash
 # build locally with docker
-docker build -t gcr.io/<project_id>/example
-docker push gcr.io/<project_id>/example
+docker build -t gcr.io/<project_id>/geobeam
+docker push gcr.io/<project_id>/geobeam
 
 # or build with Cloud Build
-gcloud builds submit --tag gcr.io/<project_id>/<name> --timeout 3600s --worker_machine_type n1-highcpu-8
+gcloud builds submit --timeout 3600s --worker_machine_type n1-highcpu-8
 ```
 
 #### Start the Dataflow job
@@ -106,7 +106,7 @@ python -m geobeam.examples.geotiff_soilgrid \
   --table soilgrid \
   --band_column h3 \
   --runner DataflowRunner \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --temp_location <temp bucket> \
   --service_account_email <service account> \
   --region us-central1 \

@@ -22,7 +22,7 @@ python -m geobeam.examples.shapefile_parcel \
 ```
 python -m geobeam.examples.shapefile_parcel \
   --runner DataflowRunner \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --project dataflow-geobeam \
   --temp_location <your temp bucket>
   --service_account_email <your service account>
@@ -55,7 +55,7 @@ python -m geobeam.examples.geodatabase_frd \
 python -m geobeam.examples.geodatabase_frd \
   --project <your project> \
   --runner DataflowRunner \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --temp_location <your temp bucket> \
   --service_account_email <your service account> \
   --region us-central1 \
@@ -88,7 +88,7 @@ python -m geobeam.examples.geotiff_dem \
 ```
 python -m geobeam.examples.geotiff_dem \
   --runner DataflowRunner \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --project dataflow-geobeam \
   --temp_location gs://geobeam-pipeline-tmp/ \
   --service_account_email dataflow-runner@dataflow-geobeam.iam.gserviceaccount.com \
@@ -126,7 +126,7 @@ python -m geobeam.examples.geotiff_soilgrid \
 ```
 python -m geobeam.examples.geotiff_soilgrid \
   --runner DataflowRunner \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --temp_location <your temp bucket> \
   --project <your project> \
   --service_account_email <your service account> \
@@ -161,7 +161,7 @@ python -m geobeam.examples.shapefile_nfhl \
   --runner DataflowRunner \
   --project <your project> \
   --temp_location <your temp bucket> \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --service_account_email <your service account> \
   --gcs_url gs://geobeam/examples/510104_20170217.zip \
   --layer_name S_FLD_HAZ_AR \
@@ -228,7 +228,7 @@ python -m geobeam.examples.geojson_stormwater \
   --runner DataflowRunner \
   --project <your project> \
   --temp_location <your temp bucket> \
-  --sdk_container_image gcr.io/dataflow-geobeam/example \
+  --sdk_container_image gcr.io/dataflow-geobeam/base \
   --service_account_email <your service account> \
   --gcs_url gs://geobeam/examples/Stormwater_Pipes.geojson \
   --dataset examples \
