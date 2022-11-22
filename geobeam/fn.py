@@ -197,10 +197,11 @@ def format_record(element):
         p | beam.Map(geobeam.fn.format_record)
     """
     import json
+    from shapely.geometry import shape
 
     props, geom = element
 
     return {
         **props,
-        'geom': json.dumps(geom)
+        'geom': json.dumps(shape(geom).__geo_interface__)
     }
