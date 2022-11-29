@@ -78,9 +78,6 @@ python -m geobeam.examples.geotiff_dem \
   --temp_location <your temp bucket> \
   --project <your project> \
   --gcs_url gs://geobeam/examples/ghent-dem-1m.tif \
-  --band_column elev \
-  --centroid_only true \
-  --skip_nodata true
 ```
 
 ### Run in Dataflow
@@ -97,11 +94,8 @@ python -m geobeam.examples.geotiff_dem \
   --dataset examples \
   --table dem \
   --schema 'elev:INT64,geom:GEOGRAPHY'
-  --band_column elev \
   --max_num_workers 3 \
   --worker_machine_type c2-standard-30 \
-  --merge_blocks 80 \
-  --centroid_only true \
 ```
 
 
@@ -133,7 +127,6 @@ python -m geobeam.examples.geotiff_soilgrid \
   --region us-central1 \
   --worker_machine_type c2-standard-8 \
   --gcs_url gs://geobeam/examples/soilgrid-test-clipped.tif \
-  --merge_blocks 20 \
   --dataset examples \
   --table soilgrid \
   --band_column h3

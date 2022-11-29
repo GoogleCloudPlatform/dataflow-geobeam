@@ -153,8 +153,8 @@ class RasterPolygonSource(filebasedsource.FileBasedSource):
 
     The raster file is read in blocks and each block is polygonized. Each
     polygon is returned as a (`value`, `geom`) tuple, where `value` is the band
-    value of the polygonized pixels, and `geom` is the Polygon (or Point if
-    centroid_only is True) geometry that corresponds to the `value`.
+    value of the polygonized pixels, and `geom` is the Polygon geometry that
+    corresponds to the `value`.
 
     `RasterPolygonSource` optimizes for immediate usability of the output, and so
     is most suitable for ETL processes; it will be slower than RasterBlockSource,

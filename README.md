@@ -3,7 +3,7 @@ geobeam adds GIS capabilities to your Apache Beam pipelines.
 ## What does geobeam do?
 
 `geobeam` enables you to ingest and analyze massive amounts of geospatial data in parallel using [Dataflow](https://cloud.google.com/dataflow).
-geobeam provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.27.0/apache_beam.io.filebasedsource.html)
+geobeam provides a set of [FileBasedSource](https://beam.apache.org/releases/pydoc/2.41.0/apache_beam.io.filebasedsource.html)
 classes that make it easy to read, process, and write geospatial data, and provides a set of helpful
 Apache Beam transforms and utilities that make it easier to process GIS data in your Dataflow pipelines.
 
@@ -31,11 +31,11 @@ See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf
 
 | **Module**      | **Version** | **Description** |
 |:----------------|:------------|:----------------|
-| [gdal](https://pypi.org/project/GDAL/)          | 3.2.1       | python bindings for GDAL
-| [rasterio](https://pypi.org/project/rasterio/)  | 1.1.8       | reads and writes geospatial raster data
-| [fiona](https://pypi.org/project/Fiona/)        | 1.8.18      | reads and writes geospatial vector data
-| [shapely](https://pypi.org/project/Shapely/)    | 1.7.1       | manipulation and analysis of geometric objects in the cartesian plane
-| [esridump](https://pypi.org/project/esridump/)  | 1.10.1      | read layer from ESRI server
+| [gdal](https://pypi.org/project/GDAL/)          | 3.5.2       | python bindings for GDAL
+| [rasterio](https://pypi.org/project/rasterio/)  | 1.3.2       | reads and writes geospatial raster data
+| [fiona](https://pypi.org/project/Fiona/)        | 1.8.21      | reads and writes geospatial vector data
+| [shapely](https://pypi.org/project/Shapely/)    | 1.8.4       | manipulation and analysis of geometric objects in the cartesian plane
+| [esridump](https://pypi.org/project/esridump/)  | 1.11.0      | read layer from ESRI server
 
 
 ## How to Use
@@ -60,7 +60,6 @@ python -m geobeam.examples.geotiff_dem \
   --dataset examples \
   --table dem \
   --band_column elev \
-  --centroid_only true \
   --runner DirectRunner \
   --temp_location <temp gs://> \
   --project <project_id>
@@ -119,21 +118,13 @@ python -m geobeam.examples.geotiff_soilgrid \
 
 #### Read Raster as Blocks
 ```py
-def format_raster_record(element):
-  import json, numpy
-
-  band_data, geom   element
-  return {
-    'elev': numpy.assarray(band_data[0]).tolist(),
-    'geom': json.dumps(geom)
-  }
-
 def run(options):
   from geobeam.io import RasterBlockSource
+  from geobeam.fn import format_rasterblock_record
 
   with beam.Pipeline(options) as p:
     (p  | 'ReadRaster' >> beam.io.Read(RasterBlockSource(gcs_url))
-        | 'FormatRecord' >> beam.Map(format_raster_record)
+        | 'FormatRecord' >> beam.Map(format_rasterblock_record)
         | 'WriteToBigquery' >> beam.io.WriteToBigQuery('geo.dem'))
 ```
 
@@ -181,7 +172,7 @@ The `geobeam.fn` module includes several [Beam Transforms](https://beam.apache.o
 | `geobeam.fn.filter_invalid` | Filter out invalid geometries that cannot be made valid
 | `geobeam.fn.format_record`  | Format the (props, geom) tuple received from a vector source into a `dict` that can be inserted into the destination table
 | `geobeam.fn.format_rasterblock_record` | Format the output record for blocks read from `RasterBlockSource`
-| `geobeam.fn.format_rasterpolygon` | Format the output record for blocks read from `RasterPolygonSource`
+| `geobeam.fn.format_rasterpolygon_record` | Format the output record for blocks read from `RasterPolygonSource`
 
 
 ## Execution parameters
@@ -196,7 +187,6 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 | `in_proj`          | All     | A [PROJ string](https://proj.org/usage/quickstart.html) to override the input source CRS | | No
 | `band_number`      | Raster  | The raster band to read from | `1` | No
 | `include_nodata`   | Raster  | True to include `nodata` values | `False` | No
-| `centroid_only`    | Raster  | True to only read pixel centroids | `False` | No
 | `layer_name`       | Vector  | Name of layer to read | | Yes, for shapefiles
 | `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | | Yes, for GDB files
 
@@ -206,7 +196,7 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 This is not an officially supported Google product, though support will be provided on a best-effort basis.
 
 ```
-Copyright 2021 Google LLC
+Copyright 2022 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
