@@ -92,7 +92,7 @@ def get_bigquery_schema(filepath, layer_name=None, gdb_name=None):
 
     return bq_schema
 
-def get_bigquery_schema_dataflow(filepath, layer_name=None, gdb_name=None):
+def get_bigquery_schema_dataflow(gcs_url, layer_name=None, gdb_name=None):
     """
     Generate a Bigquery table schema from a geospatial file hosted on a Google Cloud Storage bucket
 
