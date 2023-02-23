@@ -54,6 +54,9 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
             code.
         in_proj (str, optional): override the source projection with a
             PROJ4 string.
+        return_block_transform (bool, optional): set True to return the window
+            transform object and window dimensions in order to (re)-project
+            individual pixels in a later pipeline stage.
 
     Yields:
         generator of (`value`, `geom`) tuples. `value` is a 3D
@@ -133,17 +136,21 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
                 else:
                     block = src.read(window=win)
 
-                yield (block, geom)
+                if self.return_block_transform:
+                    yield (block, geom, xfrm, win.width, win.height, src_crs)
+                else:
+                    yield (block, geom)
 
                 next_pos = next_pos + window_bytes
 
 
     def __init__(self, file_pattern, bidx=None, in_epsg=None, in_proj=None,
-                 skip_reproject=False, **kwargs):
+                 skip_reproject=False, return_block_transform=False, **kwargs):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
         self.bidx = bidx
         self.skip_reproject = skip_reproject
+        self.return_block_transform = return_block_transform
 
         super(RasterBlockSource, self).__init__(file_pattern)
 
