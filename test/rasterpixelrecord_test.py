@@ -13,28 +13,15 @@
 # limitations under the License.
 
 """
-Example pipeline that prints a geotiff (for testing)
+Example pipeline that prints a geotiff by pixel (for testing)
 """
-
-def format_raster_record(element):
-    import json, numpy
-
-    data, geom = element
-
-    #print(numpy.asarray(data[0]))
-
-    return {
-        'band_1': numpy.asarray(data[0]).tolist(),
-        'geom': json.dumps(geom)
-    }
-
 
 def run(pipeline_args, known_args):
     """
     Run the pipeline. Invoked by the Beam runner.
     """
     import apache_beam as beam
-    #from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
+    from apache_beam.io.gcp.internal.clients import bigquery as beam_bigquery
     from apache_beam.options.pipeline_options import PipelineOptions
 
     from geobeam.io import RasterBlockSource
@@ -49,19 +36,15 @@ def run(pipeline_args, known_args):
          | beam.io.Read(RasterBlockSource(known_args.gcs_url, return_block_transform=True))
          | beam.ParDo(DoBlockToPixelExterior())
          | 'FormatRasterPixelRecord' >> beam.Map(format_rasterpixel_record)
-         | beam.Map(print))
-
-"""
-
          | 'WriteToBigQuery' >> beam.io.WriteToBigQuery(
              beam_bigquery.TableReference(
                  projectId='dataflow-geobeam',
                  datasetId='examples',
-                 tableId='raster_block_test'),
+                 tableId='monthly_ppt'),
              method=beam.io.WriteToBigQuery.Method.FILE_LOADS,
              write_disposition=beam.io.BigQueryDisposition.WRITE_TRUNCATE,
              create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED))
-        """
+
 
 if __name__ == '__main__':
     import logging

@@ -219,8 +219,8 @@ class DoBlockToPixelExterior(beam.DoFn):
 
         block_data, geom, xfrm, width, height, src_crs = element
 
-        for i in range(0, width):
-            for j in range(0, height):
+        for i in range(0, height):
+            for j in range(0, width):
                 exterior_ring = pixel_to_ring(i, j, xfrm)
 
                 geom_obj = {
