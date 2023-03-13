@@ -219,8 +219,8 @@ class DoBlockToPixelExterior(beam.DoFn):
 
         block_data, geom, xfrm, width, height, src_crs = element
 
-        for i in range(0, height):
-            for j in range(0, width):
+        for j in range(0, height):
+            for i in range(0, width):
                 exterior_ring = pixel_to_ring(i, j, xfrm)
 
                 geom_obj = {
@@ -231,18 +231,19 @@ class DoBlockToPixelExterior(beam.DoFn):
                 pixel_data = []
 
                 for bidx in range(0, len(block_data)):
-                    pixel_data.append(block_data[bidx][i][j])
+                    pixel_data.append(block_data[bidx][j][i])
 
                 yield (pixel_data, geom)
 
 
 def pixel_to_ring(i, j, xfrm):
+    origin = xfrm * (i, j)
     return [
-        xfrm * (i, j),
+        origin,
         xfrm * (i, j + 1),
         xfrm * (i + 1, j + 1),
         xfrm * (i + 1, j),
-        xfrm * (i, j)
+        origin
     ]
 
 
