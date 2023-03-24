@@ -1,0 +1,54 @@
+[
+  {
+    "name": "band_1",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_2",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_3",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_4",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_5",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_6",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_7",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_8",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_9",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_10",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_11",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "band_12",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY"
+  }
+]

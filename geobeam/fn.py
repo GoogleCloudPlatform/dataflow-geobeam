@@ -17,6 +17,7 @@ Beam functions, transforms, and filters that can be used to process
 geometries in your pipeline
 """
 
+import apache_beam as beam
 
 def make_valid(element, drop_z=True):
     """
@@ -203,5 +204,67 @@ def format_record(element):
 
     return {
         **props,
+        'geom': json.dumps(shape(geom).__geo_interface__)
+    }
+
+
+class DoBlockToPixelExterior(beam.DoFn):
+    def process(self, element):
+        """Decompose a raster block into individual pixels in order to store one
+        pixel per row"""
+
+        #import json
+        #from shapely.geometry import shape
+        from fiona.transform import transform_geom
+
+        block_data, geom, xfrm, width, height, src_crs = element
+
+        for j in range(0, height):
+            for i in range(0, width):
+                exterior_ring = pixel_to_ring(i, j, xfrm)
+
+                geom_obj = {
+                    'type': 'Polygon',
+                    'coordinates': [ exterior_ring ]
+                }
+                geom = transform_geom(src_crs, 'epsg:4326', geom_obj)
+                pixel_data = []
+
+                for bidx in range(0, len(block_data)):
+                    pixel_data.append(block_data[bidx][j][i])
+
+                yield (pixel_data, geom)
+
+
+def pixel_to_ring(i, j, xfrm):
+    origin = xfrm * (i, j)
+    return [
+        origin,
+        xfrm * (i, j + 1),
+        xfrm * (i + 1, j + 1),
+        xfrm * (i + 1, j),
+        origin
+    ]
+
+
+def format_rasterpixel_record(element, band_mapping=None):
+    import json
+    from shapely.geometry import shape
+
+    data, geom = element
+    record = {}
+
+    if band_mapping is None:
+        for bidx in range(0, len(data)):
+            band_data = data[bidx].tolist()
+            record['band_{}'.format(bidx + 1)] = band_data
+    else:
+        for band in band_mapping:
+            bidx = band - 1
+            band_data = data[bidx]
+            record[band_mapping[band]] = band_data
+
+    return {
+        **record,
         'geom': json.dumps(shape(geom).__geo_interface__)
     }
