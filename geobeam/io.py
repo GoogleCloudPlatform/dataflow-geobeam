@@ -73,10 +73,10 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
 
         next_pos = range_tracker.start_position()
 
-        def split_points_unclaimed(stop_pos):
-            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+        #def split_points_unclaimed(stop_pos):
+            #return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
-        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+        #range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         with rasterio.open(file_name) as src:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
@@ -152,7 +152,7 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
         self.skip_reproject = skip_reproject
         self.return_block_transform = return_block_transform
 
-        super(RasterBlockSource, self).__init__(file_pattern)
+        super(RasterBlockSource, self).__init__(file_pattern, splittable=False)
 
 class RasterPolygonSource(filebasedsource.FileBasedSource):
     """A Beam FileBasedSource for reading pixels grouped by value from raster
@@ -201,10 +201,10 @@ class RasterPolygonSource(filebasedsource.FileBasedSource):
 
         next_pos = range_tracker.start_position()
 
-        def split_points_unclaimed(stop_pos):
-            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
+        #def split_points_unclaimed(stop_pos):
+        #    return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
-        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
+        #range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         with rasterio.open(file_name) as src:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
@@ -252,7 +252,7 @@ class RasterPolygonSource(filebasedsource.FileBasedSource):
         self.in_proj = in_proj
         self.bidx = bidx
 
-        super(RasterPolygonSource, self).__init__(file_pattern)
+        super(RasterPolygonSource, self).__init__(file_pattern, splittable=False)
 
 
 class ShapefileSource(filebasedsource.FileBasedSource):
