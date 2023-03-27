@@ -10,7 +10,7 @@ Apache Beam transforms and utilities that make it easier to process GIS data in 
 See the [Full Documentation](https://storage.googleapis.com/geobeam/docs/all.pdf) for complete API specification.
 
 ### Requirements
-- Apache Beam 2.41+
+- Apache Beam 2.46+
 - Python 3.8+
 
 > Note: Make sure the Python version used to run the pipeline matches the version in the built container.
@@ -72,7 +72,7 @@ python -m geobeam.examples.geotiff_dem \
 ##### Write a Dockerfile
 
 This will run in Dataflow as a [custom container](https://cloud.google.com/dataflow/docs/guides/using-custom-containers) based on the [`dataflow-geobeam/base`](Dockerfile) image.
-It is recommended that you publish your own container based on `gcr.io/dataflow-geobeam/base` and store it in your project's GCR registry.
+It is recommended that you publish your own container based on the Dockerfile in this repository and store it in your project's GCR registry.
 
 
 ```dockerfile
@@ -187,6 +187,7 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 | `in_proj`          | All     | A [PROJ string](https://proj.org/usage/quickstart.html) to override the input source CRS | | No
 | `band_number`      | Raster  | The raster band to read from | `1` | No
 | `include_nodata`   | Raster  | True to include `nodata` values | `False` | No
+| `return_block_transform` | Raster | True to include rasterio `transform` object with each block to use with `geobeam.fn.format_rasterpixel_record` | `False` | No
 | `layer_name`       | Vector  | Name of layer to read | | Yes, for shapefiles
 | `gdb_name`         | Vector  | Name of geodatabase directory in a gdb zip archive | | Yes, for GDB files
 
@@ -196,7 +197,7 @@ These can be parsed as pipeline arguments and passed into the respective FileSou
 This is not an officially supported Google product, though support will be provided on a best-effort basis.
 
 ```
-Copyright 2022 Google LLC
+Copyright 2023 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
