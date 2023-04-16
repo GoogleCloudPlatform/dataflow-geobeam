@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/beam_python3.8_sdk:2.41.0
+FROM apache/beam_python3.8_sdk:2.46.0
 
 ARG WORKDIR=/pipeline
 RUN mkdir -p ${WORKDIR}
