@@ -34,7 +34,10 @@ def make_valid(element, drop_z=True):
     from shapely import validation, wkb
 
     props, geom = element
-    shape_geom = shape(geom)
+    try:
+        shape_geom = shape(geom)
+    except:
+        return None
 
     if not shape_geom.is_valid:
         shape_geom = validation.make_valid(shape_geom)
@@ -187,7 +190,7 @@ def format_rasterpolygon_record(element, band_type='int', band_column=None):
     }
 
 
-def format_record(element):
+def format_record(element, geom_format='geojson'):
     """Format the tuple received from the geobeam file source into a record
     that can be inserted into BigQuery or another database.
 
@@ -202,9 +205,14 @@ def format_record(element):
 
     props, geom = element
 
+    if geom_format == 'wkt':
+        geom_value = shape(geom).wkt
+    else:
+        geom_value = json.dumps(shape(geom).__geo_interface__)
+
     return {
         **props,
-        'geom': json.dumps(shape(geom).__geo_interface__)
+        'geom': geom_value
     }
 
 

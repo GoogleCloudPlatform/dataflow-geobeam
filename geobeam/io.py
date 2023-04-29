@@ -73,11 +73,6 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
 
         next_pos = range_tracker.start_position()
 
-        #def split_points_unclaimed(stop_pos):
-            #return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
-
-        #range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
-
         with rasterio.open(file_name) as src:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
 
@@ -123,7 +118,7 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
                 ]
                 geom_obj = {
                     'type': 'Polygon',
-                    'coordinates': [ exterior_ring ]
+                    'coordinates': [exterior_ring]
                 }
 
                 if self.skip_reproject:
@@ -153,6 +148,7 @@ class RasterBlockSource(filebasedsource.FileBasedSource):
         self.return_block_transform = return_block_transform
 
         super(RasterBlockSource, self).__init__(file_pattern, splittable=False)
+
 
 class RasterPolygonSource(filebasedsource.FileBasedSource):
     """A Beam FileBasedSource for reading pixels grouped by value from raster
@@ -200,11 +196,6 @@ class RasterPolygonSource(filebasedsource.FileBasedSource):
         total_bytes = self.estimate_size()
 
         next_pos = range_tracker.start_position()
-
-        #def split_points_unclaimed(stop_pos):
-        #    return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
-
-        #range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         with rasterio.open(file_name) as src:
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(src.crs, self.in_epsg, self.in_proj)
@@ -288,11 +279,6 @@ class ShapefileSource(filebasedsource.FileBasedSource):
         total_bytes = self.estimate_size()
         next_pos = range_tracker.start_position()
 
-        def split_points_unclaimed(stop_pos):
-            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
-
-        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
-
         with self.open_file(file_name) as f:
             if self.layer_name:
                 collection = BytesCollection(f.read(), layer=self.layer_name)
@@ -303,7 +289,6 @@ class ShapefileSource(filebasedsource.FileBasedSource):
 
             num_features = len(collection)
             feature_bytes = math.floor(total_bytes / num_features)
-            i = 0
 
             logging.info(json.dumps({
                 'msg': 'read_records',
@@ -330,15 +315,16 @@ class ShapefileSource(filebasedsource.FileBasedSource):
 
                 next_pos = next_pos + feature_bytes
 
+
     def __init__(self, file_pattern, layer_name=None, skip_reproject=False,
-                 in_epsg=None, in_proj=None,**kwargs):
+                 in_epsg=None, in_proj=None, **kwargs):
 
         self.layer_name = layer_name
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(ShapefileSource, self).__init__(file_pattern)
+        super(ShapefileSource, self).__init__(file_pattern, splittable=False)
 
 
 class GeodatabaseSource(filebasedsource.FileBasedSource):
@@ -376,11 +362,6 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
 
         total_bytes = self.estimate_size()
         next_pos = range_tracker.start_position()
-
-        def split_points_unclaimed(stop_pos):
-            return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
-
-        range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         gdb_layers = fiona.listlayers(fiona_path)
         if self.layer_name and self.layer_name not in gdb_layers:
@@ -446,7 +427,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         self.in_epsg = in_epsg
         self.in_proj = in_proj
 
-        super(GeodatabaseSource, self).__init__(file_pattern)
+        super(GeodatabaseSource, self).__init__(file_pattern, splittable=False)
 
 
 class GeoJSONSource(filebasedsource.FileBasedSource):
@@ -565,8 +546,9 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
         esri_dump = EsriDumper(file_name)
 
         geojson = {
-        "type": "FeatureCollection",
-        "features": list(esri_dump) }
+            "type": "FeatureCollection",
+            "features": list(esri_dump)
+        }
 
         collection = BytesCollection(json.dumps(geojson, indent=2).encode('utf-8'))
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg, self.in_proj)
