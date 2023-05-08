@@ -386,7 +386,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 'next_pos': next_pos,
                 'file_name': file_name,
                 'layer_name': self.layer_name,
-                'profile': collection.profile,
+                #'profile': collection.profile,
                 'num_features': num_features,
                 'total_bytes': total_bytes
             }))
@@ -403,6 +403,9 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                     continue
 
                 geom = cur_feature['geometry']
+
+                if src_crs is None:
+                    yield (cur_feature['properties'], None)
 
                 if geom is None:
                     logging.info('Skipping null geometry: {}'.format(cur_feature))
@@ -628,7 +631,8 @@ class _GeoSourceUtils():
             return in_crs
 
         if bool(src_crs) is False:
-            logging.error('--in_epsg must be specified because raster CRS is empty.')
-            raise Exception()
+            logging.error('--in_epsg must be specified because CRS is empty.')
+            return False, None
+            #raise Exception()
 
         return is_wgs84, src_crs

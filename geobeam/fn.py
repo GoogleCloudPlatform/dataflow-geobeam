@@ -19,6 +19,7 @@ geometries in your pipeline
 
 import apache_beam as beam
 
+
 def make_valid(element, drop_z=True):
     """
     Attempt to make a geometry valid. Returns `None` if the geometry cannot
@@ -36,11 +37,12 @@ def make_valid(element, drop_z=True):
     props, geom = element
     try:
         shape_geom = shape(geom)
-    except:
+    except Exception:
         return None
 
     if not shape_geom.is_valid:
         shape_geom = validation.make_valid(shape_geom)
+        #shape_geom = force_2d(shape_geom)
 
     if drop_z and shape_geom.has_z:
         shape_geom = wkb.loads(wkb.dumps(shape_geom, output_dimension=2))
@@ -110,12 +112,12 @@ def trim_polygons(element, d=0.0000001, cf=1.2):
 
     return (
         props,
-        shape_geom
+        (shape_geom
             .buffer(-d)
             .buffer(d * cf)
             .intersection(shape_geom)
             .simplify(d)
-            .__geo_interface__
+            .__geo_interface__)
     )
 
 
@@ -205,6 +207,9 @@ def format_record(element, geom_format='geojson'):
 
     props, geom = element
 
+    if geom is None:
+        return {**props}
+
     if geom_format == 'wkt':
         geom_value = shape(geom).wkt
     else:
@@ -221,8 +226,6 @@ class DoBlockToPixelExterior(beam.DoFn):
         """Decompose a raster block into individual pixels in order to store one
         pixel per row"""
 
-        #import json
-        #from shapely.geometry import shape
         from fiona.transform import transform_geom
 
         block_data, geom, xfrm, width, height, src_crs = element
@@ -233,7 +236,7 @@ class DoBlockToPixelExterior(beam.DoFn):
 
                 geom_obj = {
                     'type': 'Polygon',
-                    'coordinates': [ exterior_ring ]
+                    'coordinates': [exterior_ring]
                 }
                 geom = transform_geom(src_crs, 'epsg:4326', geom_obj)
                 pixel_data = []
