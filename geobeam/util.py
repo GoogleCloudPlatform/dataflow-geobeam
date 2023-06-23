@@ -130,7 +130,7 @@ def get_bigquery_schema_dataflow(gcs_url, layer_name=None, gdb_name=None):
 
     if gdb_name is not None:
         with fiona.io.ZipMemoryFile(data) as zip:
-            with zip.open(f'{zip_name}.gdb', layer=gdb_name) as collection:
+            with zip.open(f'{zip_name}.gdb', layer=layer_name) as collection:
                 print(collection)
                 profile = collection.profile
     elif layer_name is not None:
