@@ -1,0 +1,30 @@
+[
+  {
+    "name": "x",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "y",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "track",
+    "type": "INT64"
+  },
+  {
+    "name": "bin",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "z",
+    "type": "FLOAT64"
+  },
+  {
+    "name": "amplitude",
+    "type": "INT64"
+  },
+  {
+    "name": "geom",
+    "type": "GEOGRAPHY"
+  }
+]
