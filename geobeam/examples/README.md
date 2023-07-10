@@ -227,3 +227,22 @@ python -m geobeam.examples.geojson_stormwater \
   --dataset examples \
   --table stormwater
 ```
+
+## `fixedwidth_ascii`
+
+```
+bq mk --table <dataset>.fixedwidth geobeam/examples/fixedwidth_ascii_schema.json
+```
+
+### Run Locally
+
+```
+python geobeam/examples/fixedwidth_ascii.py \
+  --runner DirectRunner \
+  --project <your project> \
+  --temp_location <your temp bucket> \
+  --in_crs epsg:26715
+  --in_file <your_file>
+  --dataset <dataset>
+  --table fixedwidth
+```
